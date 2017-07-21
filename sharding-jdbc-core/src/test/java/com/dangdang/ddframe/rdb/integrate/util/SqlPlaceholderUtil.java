@@ -19,7 +19,14 @@ package com.dangdang.ddframe.rdb.integrate.util;
 
 public class SqlPlaceholderUtil {
     
+    public static String replaceStatement(final String str, final Object[] args) {
+        if (args.length == 0) {
+            return str;
+        }
+        return String.format(str, args);
+    }
+    
     public static String replacePreparedStatement(final String str) {
         return str.replace("%s", "?");
-    } 
+    }
 }

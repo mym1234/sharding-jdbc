@@ -15,19 +15,19 @@
  * </p>
  */
 
-package com.dangdang.ddframe.rdb.sharding.keygen.workerid;
+package com.dangdang.ddframe.rdb.sharding.parsing.parser.token;
 
-import com.dangdang.ddframe.rdb.sharding.keygen.DefaultKeyGenerator;
-import org.junit.Rule;
-import org.junit.contrib.java.lang.system.ProvideSystemProperty;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-public final class SystemPropertyWorkerIdTest extends AbstractWorkerIdTest {
+/**
+ * 排序标记对象.
+ *
+ * @author zhangliang
+ */
+@RequiredArgsConstructor
+@Getter
+public final class OrderByToken implements SQLToken {
     
-    @Rule
-    public final ProvideSystemProperty provideSystemProperty = new ProvideSystemProperty(DefaultKeyGenerator.WORKER_ID_PROPERTY_KEY, "12");
-    
-    @Override
-    protected long getWorkerId() {
-        return 12L;
-    }
+    private final int beginPosition;
 }

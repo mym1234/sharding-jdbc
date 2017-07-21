@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,20 +15,22 @@
  * </p>
  */
 
-package com.dangdang.ddframe.rdb.sharding.keygen.workerid;
+package com.dangdang.ddframe.rdb.common.jaxb;
 
-import com.dangdang.ddframe.rdb.sharding.keygen.DefaultKeyGenerator;
-import org.junit.Before;
+import lombok.Getter;
+import lombok.Setter;
 
-public final class ApiWorkerIdTest extends AbstractWorkerIdTest {
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import java.util.ArrayList;
+import java.util.List;
+
+@XmlAccessorType(XmlAccessType.FIELD)
+@Getter
+@Setter
+public final class SqlParameters {
     
-    @Before
-    public void init() {
-        DefaultKeyGenerator.setWorkerId(11L);
-    }
-    
-    @Override
-    protected long getWorkerId() {
-        return 11;
-    }
+    @XmlElement
+    private List<SqlParameter> parameter = new ArrayList<>();
 }
