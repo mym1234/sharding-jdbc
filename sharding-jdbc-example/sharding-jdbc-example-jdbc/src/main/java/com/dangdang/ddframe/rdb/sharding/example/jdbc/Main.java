@@ -39,49 +39,52 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("Duplicates")
 public final class Main {
-    
+
     // CHECKSTYLE:OFF
     public static void main(final String[] args) throws SQLException {
-    // CHECKSTYLE:ON
+        // CHECKSTYLE:ON
         DataSource dataSource = getShardingDataSource();
         printSimpleSelect(dataSource);
-        System.out.println("--------------");
-        printGroupBy(dataSource);
-        System.out.println("--------------");
-        printHintSimpleSelect(dataSource);
+//        System.out.println("--------------");
+//        printGroupBy(dataSource);
+//        System.out.println("--------------");
+//        printHintSimpleSelect(dataSource);
     }
-    
+
     private static void printSimpleSelect(final DataSource dataSource) throws SQLException {
-        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id WHERE o.user_id=? AND o.order_id=?";
+//        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id WHERE o.user_id=? AND o.order_id=?";
+//        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id JOIN t_order_item2 i2 ON o.order_id=i2.order_id WHERE o.user_id=? AND o.order_id=?";
+        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id ORDER BY i.order_id DESC";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-            preparedStatement.setInt(1, 10);
-            preparedStatement.setInt(2, 1001);
+//            preparedStatement.setInt(1, 10);
+//            preparedStatement.setInt(2, 1001);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 while (rs.next()) {
                     System.out.println(rs.getInt(1));
                     System.out.println(rs.getInt(2));
-                    System.out.println(rs.getInt(3));
+//                    System.out.println(rs.getInt(3));
                 }
             }
         }
     }
-    
+
     private static void printGroupBy(final DataSource dataSource) throws SQLException {
         String sql = "SELECT o.user_id, COUNT(*) FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id GROUP BY o.user_id";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)
-                ) {
+        ) {
             ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
                 System.out.println("user_id: " + rs.getInt(1) + ", count: " + rs.getInt(2));
             }
         }
     }
-    
+
     private static void printHintSimpleSelect(final DataSource dataSource) throws SQLException {
         String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id";
         try (
@@ -99,31 +102,57 @@ public final class Main {
             }
         }
     }
-    
+
     private static ShardingDataSource getShardingDataSource() {
         DataSourceRule dataSourceRule = new DataSourceRule(createDataSourceMap());
-        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order_0", "t_order_1")).dataSourceRule(dataSourceRule).build();
-        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1")).dataSourceRule(dataSourceRule).build();
-        ShardingRule shardingRule = ShardingRule.builder().dataSourceRule(dataSourceRule).tableRules(Arrays.asList(orderTableRule, orderItemTableRule))
+//        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order_0", "t_order_1"))
+        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order"))
+                .dataSourceRule(dataSourceRule)
+//                .dataSourceRule(new DataSourceRule(createDataSourceMap01()))
+//                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
+                .build();
+//        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1")).dataSourceRule(dataSourceRule).build();
+//        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1"))
+        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item"))
+                .dataSourceRule(dataSourceRule)
+//                .dataSourceRule(new DataSourceRule(createDataSourceMap02()))
+                .build();
+        ShardingRule shardingRule = ShardingRule.builder()
+                .dataSourceRule(dataSourceRule)
+                .tableRules(Arrays.asList(orderTableRule, orderItemTableRule))
                 .bindingTableRules(Collections.singletonList(new BindingTableRule(Arrays.asList(orderTableRule, orderItemTableRule))))
+//                .bindingTableRules(Arrays.asList(new BindingTableRule(Collections.singletonList(orderTableRule)),
+//                        new BindingTableRule(Collections.singletonList(orderItemTableRule))))
                 .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
                 .tableShardingStrategy(new TableShardingStrategy("order_id", new ModuloTableShardingAlgorithm())).build();
         return new ShardingDataSource(shardingRule);
     }
-    
+
     private static Map<String, DataSource> createDataSourceMap() {
         Map<String, DataSource> result = new HashMap<>(2);
         result.put("ds_jdbc_0", createDataSource("ds_jdbc_0"));
         result.put("ds_jdbc_1", createDataSource("ds_jdbc_1"));
         return result;
     }
-    
+
+    private static Map<String, DataSource> createDataSourceMap01() {
+        Map<String, DataSource> result = new HashMap<>(2);
+        result.put("ds_jdbc_0", createDataSource("ds_jdbc_0"));
+        return result;
+    }
+
+    private static Map<String, DataSource> createDataSourceMap02() {
+        Map<String, DataSource> result = new HashMap<>(2);
+        result.put("ds_jdbc_1", createDataSource("ds_jdbc_1"));
+        return result;
+    }
+
     private static DataSource createDataSource(final String dataSourceName) {
         BasicDataSource result = new BasicDataSource();
         result.setDriverClassName(com.mysql.jdbc.Driver.class.getName());
-        result.setUrl(String.format("jdbc:mysql://localhost:3306/%s", dataSourceName));
+        result.setUrl(String.format("jdbc:mysql://localhost:33061/%s", dataSourceName)); // TODO 修改：芋艿，数据源
         result.setUsername("root");
-        result.setPassword("");
+        result.setPassword("123456"); // TODO 修改：芋艿，增加密码
         return result;
     }
 }

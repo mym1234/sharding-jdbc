@@ -39,6 +39,7 @@ import java.util.Calendar;
  *
  * @author thor zhangliang
  */
+@SuppressWarnings("Duplicates")
 @Setter
 public abstract class AbstractStreamResultSetMerger implements ResultSetMerger {
     
