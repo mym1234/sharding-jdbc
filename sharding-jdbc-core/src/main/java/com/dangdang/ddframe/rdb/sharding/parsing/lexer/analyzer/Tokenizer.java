@@ -125,6 +125,8 @@ public final class Tokenizer {
     
     /**
      * 扫描变量.
+     * 在 MySQL 里，@代表用户变量；@@代表系统变量。
+     * 在 SQLServer 里，有 @@。
      *
      * @return 变量标记
      */
@@ -223,14 +225,17 @@ public final class Tokenizer {
     
     /**
      * 扫描数字.
+     * 解析数字的结果会有两种：整数 和 浮点数.
      *
      * @return 数字标记
      */
     public Token scanNumber() {
         int length = 0;
+        // 负数
         if ('-' == charAt(offset + length)) {
             length++;
         }
+        // 浮点数
         length += getDigitalLength(offset + length);
         boolean isFloat = false;
         if ('.' == charAt(offset + length)) {
@@ -238,6 +243,7 @@ public final class Tokenizer {
             length++;
             length += getDigitalLength(offset + length);
         }
+        // 科学计数表示，例如：
         if (isScientificNotation(offset + length)) {
             isFloat = true;
             length++;
@@ -246,6 +252,7 @@ public final class Tokenizer {
             }
             length += getDigitalLength(offset + length);
         }
+        // 二进制数表示，例如：
         if (isBinaryNumber(offset + length)) {
             isFloat = true;
             length++;

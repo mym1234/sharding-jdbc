@@ -56,7 +56,10 @@ public final class Main {
     private static void printSimpleSelect(final DataSource dataSource) throws SQLException {
 //        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id WHERE o.user_id=? AND o.order_id=?";
 //        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id JOIN t_order_item2 i2 ON o.order_id=i2.order_id WHERE o.user_id=? AND o.order_id=?";
-        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id ORDER BY i.order_id DESC";
+//        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id ORDER BY i.order_id DESC";
+//        String sql = "SELECT @@VERSION"; // 带变量的 SQL
+//        String sql = "SELECT 0x123 AS SEQ"; // 数字 和 AS
+        String sql = "SELECT -.123"; // 数字 和 AS
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
