@@ -59,7 +59,10 @@ public final class Main {
 //        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id ORDER BY i.order_id DESC";
 //        String sql = "SELECT @@VERSION"; // 带变量的 SQL
 //        String sql = "SELECT 0x123 AS SEQ"; // 数字 和 AS
-        String sql = "SELECT -.123"; // 数字 和 AS
+//        String sql = "SELECT -.2 as C"; // 数字 和 AS
+//        String sql = "SELECT 1.13E10 as C"; // 数字 和 AS
+//        String sql = "SELECT 1.321312FE100;;"; // 科学计数法 + 浮点数
+        String sql = "select 1.321312E10;;"; // 数字 和 AS
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {

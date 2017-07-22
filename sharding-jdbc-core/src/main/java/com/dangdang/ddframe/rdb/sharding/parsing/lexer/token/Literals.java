@@ -36,9 +36,18 @@ public enum Literals implements TokenType {
     FLOAT,
     /**
      * 十六进制
+     * 例如，SELECT 0x1A
      */
     HEX,
+    /**
+     * 字符串
+     * 例如：SELECT "123"
+     */
     CHARS,
+    /**
+     * 词法关键词
+     * 例如："SELECT", "FROM", "WHERE" 等
+     */
     IDENTIFIER,
     /**
      * 变量
