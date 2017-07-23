@@ -65,7 +65,7 @@ public class Lexer {
             currentToken = new Tokenizer(input, dictionary, offset).scanVariable();
         } else if (isNCharBegin()) { // N\
             currentToken = new Tokenizer(input, dictionary, ++offset).scanChars();
-        } else if (isIdentifierBegin()) { // 默认词法关键词，例如：SELECT
+        } else if (isIdentifierBegin()) { // Keyword + Literals.IDENTIFIER
             currentToken = new Tokenizer(input, dictionary, offset).scanIdentifier();
         } else if (isHexDecimalBegin()) { // 十六进制
             currentToken = new Tokenizer(input, dictionary, offset).scanHexDecimal();
@@ -81,7 +81,9 @@ public class Lexer {
             currentToken = new Token(Assist.ERROR, "", offset);
         }
         offset = currentToken.getEndPosition();
-        System.out.println(currentToken.getLiterals() + "\t" + currentToken.getType() + "\t" + currentToken.getEndPosition());
+        System.out.println("| " + currentToken.getLiterals() + " | "
+                +  currentToken.getType().getClass().getSimpleName() + " | " + currentToken.getType() + " | "
+                + currentToken.getEndPosition() + " |");
     }
 
     /**
@@ -128,9 +130,10 @@ public class Lexer {
 
     /**
      * 是否是 变量
+     * MySQL 与 SQL Server 支持
      *
-     * @return 是否
      * @see Tokenizer#scanVariable()
+     * @return 是否
      */
     protected boolean isVariableBegin() {
         return false;
@@ -152,7 +155,7 @@ public class Lexer {
     }
 
     /**
-     * 是否是 默认词法关键词
+     * 是否是 Keyword + Literals.IDENTIFIER
      *
      * @see Tokenizer#scanIdentifier()
      * @return 是否

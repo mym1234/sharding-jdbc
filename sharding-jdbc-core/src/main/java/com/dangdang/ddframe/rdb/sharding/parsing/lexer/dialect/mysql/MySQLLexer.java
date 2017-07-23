@@ -28,7 +28,7 @@ import com.dangdang.ddframe.rdb.sharding.parsing.lexer.Lexer;
 public final class MySQLLexer extends Lexer {
 
     /**
-     * 字段
+     * 字典
      */
     private static Dictionary dictionary = new Dictionary(MySQLKeyword.values());
     

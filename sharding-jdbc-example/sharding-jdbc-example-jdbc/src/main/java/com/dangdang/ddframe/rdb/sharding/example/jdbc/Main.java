@@ -62,7 +62,8 @@ public final class Main {
 //        String sql = "SELECT -.2 as C"; // 数字 和 AS
 //        String sql = "SELECT 1.13E10 as C"; // 数字 和 AS
 //        String sql = "SELECT 1.321312FE100;;"; // 科学计数法 + 浮点数
-        String sql = "select 1.321312E10;;"; // 数字 和 AS
+//        String sql = "select 1.321312E10;;"; // 数字 和 AS
+        String sql = "/** sb **/ SELECT `id  + `` 1`, group FROM t_user GROUP BY id"; // group by
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {

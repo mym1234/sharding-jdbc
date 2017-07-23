@@ -25,11 +25,11 @@ package com.dangdang.ddframe.rdb.sharding.parsing.lexer.token;
 public enum Assist implements TokenType {
 
     /**
-     * 到达结尾
+     * 分析结束
      */
     END,
     /**
-     * 解析错误，无符合条件词法标记
+     * 分析错误，无符合条件词法标记
      */
     ERROR
 }

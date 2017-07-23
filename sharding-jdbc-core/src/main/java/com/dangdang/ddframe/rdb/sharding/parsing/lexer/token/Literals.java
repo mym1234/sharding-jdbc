@@ -46,12 +46,12 @@ public enum Literals implements TokenType {
     CHARS,
     /**
      * 词法关键词
-     * 例如："SELECT", "FROM", "WHERE" 等
+     * 例如：表名，查询字段 等等
      */
     IDENTIFIER,
     /**
      * 变量
-     * 例如，SELECT @@VERSION
+     * 例如：SELECT @@VERSION
      */
     VARIABLE
 }
