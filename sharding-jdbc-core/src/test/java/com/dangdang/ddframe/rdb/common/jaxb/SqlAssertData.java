@@ -24,30 +24,14 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 
+@XmlAccessorType(XmlAccessType.FIELD)
 @Getter
 @Setter
-@XmlAccessorType(XmlAccessType.FIELD)
-public final class SqlParameterValue {
+public final class SqlAssertData {
     
     @XmlAttribute
-    private String literal;
+    private String parameter;
     
     @XmlAttribute
-    private String type;
-    
-    public Comparable<?> getValueWithType() {
-        if (boolean.class.getName().equals(type) || Boolean.class.getName().equals(type)) {
-            return Boolean.valueOf(literal);
-        }
-        if (int.class.getName().equals(type) || Integer.class.getName().equals(type)) {
-            return Integer.parseInt(literal);
-        }
-        if (long.class.getName().equals(type) || Long.class.getName().equals(type)) {
-            return Long.parseLong(literal);
-        }
-        if (double.class.getName().equals(type) || Double.class.getName().equals(type)) {
-            return Double.parseDouble(literal);
-        }
-        return literal;
-    }
+    private String expected;
 }
