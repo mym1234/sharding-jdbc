@@ -77,7 +77,7 @@ public class MySQLSelectParser extends AbstractSelectParser {
         // 解析 Group By 和 Having（目前不支持）条件
         parseGroupBy();
         // 解析 Order By 条件
-        getSelectStatement().getOrderByItems().addAll(parseOrderBy());
+        parseOrderBy();
         // 解析 分页 Limit 条件
         parseLimit();
         // [PROCEDURE] 暂不支持

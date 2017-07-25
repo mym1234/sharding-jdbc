@@ -268,14 +268,17 @@ public class SQLParser extends AbstractParser {
         SQLExpression left = parseExpression(sqlStatement);
         if (equalAny(Symbol.EQ)) {
             parseEqualCondition(sqlStatement, left);
+            skipIfEqual(Symbol.RIGHT_PAREN);
             return;
         }
         if (equalAny(DefaultKeyword.IN)) {
             parseInCondition(sqlStatement, left);
+            skipIfEqual(Symbol.RIGHT_PAREN);
             return;
         }
         if (equalAny(DefaultKeyword.BETWEEN)) {
             parseBetweenCondition(sqlStatement, left);
+            skipIfEqual(Symbol.RIGHT_PAREN);
             return;
         }
         if (equalAny(Symbol.LT, Symbol.GT, Symbol.LT_EQ, Symbol.GT_EQ)) {
@@ -291,7 +294,7 @@ public class SQLParser extends AbstractParser {
         } else if (equalAny(DefaultKeyword.LIKE)) {
             parseOtherCondition(sqlStatement);
         }
-        skipIfEqual(Symbol.LEFT_PAREN);
+        skipIfEqual(Symbol.RIGHT_PAREN);
     }
     
     private void parseEqualCondition(final SQLStatement sqlStatement, final SQLExpression left) {

@@ -41,7 +41,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -73,7 +72,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     @Override
     public final SelectStatement parse() {
         query();
-        selectStatement.getOrderByItems().addAll(parseOrderBy());
+        parseOrderBy();
         customizedSelect(); // TODO oracle sqlserver 特殊
         appendDerivedColumns(); // TODO 推到字段？
         appendDerivedOrderBy(); // TODO 推到排序？
@@ -209,14 +208,9 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         parametersIndex = sqlParser.getParametersIndex();
     }
     
-    /**
-     * 解析排序.
-     *
-     * @return 排序上下文
-     */
-    public final List<OrderItem> parseOrderBy() {
+    protected final void parseOrderBy() {
         if (!sqlParser.skipIfEqual(DefaultKeyword.ORDER)) {
-            return Collections.emptyList();
+            return;
         }
         List<OrderItem> result = new LinkedList<>();
         sqlParser.skipIfEqual(DefaultKeyword.SIBLINGS);
@@ -228,7 +222,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
             }
         }
         while (sqlParser.skipIfEqual(Symbol.COMMA));
-        return result;
+        selectStatement.getOrderByItems().addAll(result);
     }
     
     protected Optional<OrderItem> parseSelectOrderByItem() {
