@@ -56,7 +56,7 @@ public final class SQLParsingEngine {
     public SQLStatement parse() {
         SQLParser sqlParser = getSQLParser();
         sqlParser.skipIfEqual(Symbol.SEMI);
-        if (sqlParser.equalAny(DefaultKeyword.WITH)) {
+        if (sqlParser.equalAny(DefaultKeyword.WITH)) { // TODO 疑问
             skipWith(sqlParser);
         }
         if (sqlParser.equalAny(DefaultKeyword.SELECT)) {

@@ -39,11 +39,18 @@ import java.util.List;
 @EqualsAndHashCode
 @ToString
 public final class AggregationSelectItem implements SelectItem {
-    
+
+    /**
+     * 聚合类型
+     */
     private final AggregationType type;
-    
+    /**
+     * 聚合内部表达式
+     */
     private final String innerExpression;
-    
+    /**
+     * 别名
+     */
     private final Optional<String> alias;
     
     private final List<AggregationSelectItem> derivedAggregationSelectItems = new ArrayList<>(2);

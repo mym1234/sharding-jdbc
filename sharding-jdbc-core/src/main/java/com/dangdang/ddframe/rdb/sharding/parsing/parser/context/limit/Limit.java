@@ -37,7 +37,10 @@ import java.util.List;
 @Setter
 @ToString
 public final class Limit {
-    
+
+    /**
+     * TODO 疑问：可能和重写有关
+     */
     private final boolean rowCountRewriteFlag;
     
     private LimitValue offset;

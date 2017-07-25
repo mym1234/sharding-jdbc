@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * 选择项.
+ * 通用选择项.
  *
  * @author zhangliang
  */
@@ -31,10 +31,17 @@ import lombok.ToString;
 @Getter
 @ToString
 public final class CommonSelectItem implements SelectItem {
-    
+
+    /**
+     * 表达式
+     */
     private final String expression;
-    
+    /**
+     * 别名
+     */
     private final Optional<String> alias;
-    
+    /**
+     * 是否 * 号
+     */
     private final boolean star;
 }

@@ -29,13 +29,7 @@ import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.limit.LimitValue
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.table.Table;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.table.Tables;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.exception.SQLParsingUnsupportedException;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLExpression;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLIdentifierExpression;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLIgnoreExpression;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLNumberExpression;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLPlaceholderExpression;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLPropertyExpression;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.SQLTextExpression;
+import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.*;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.SQLStatement;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.select.SelectStatement;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.token.OffsetToken;
@@ -158,11 +152,12 @@ public class SQLParser extends AbstractParser {
     }
     
     /**
-     * 解析别名.
+     * 解析别名.不仅仅是字段的别名，也可以是表的别名。
      *
      * @return 别名
      */
     public Optional<String> parseAlias() {
+        // 解析带 AS 情况
         if (skipIfEqual(DefaultKeyword.AS)) {
             if (equalAny(Symbol.values())) {
                 return Optional.absent();
@@ -171,6 +166,7 @@ public class SQLParser extends AbstractParser {
             getLexer().nextToken();
             return Optional.of(result);
         }
+        // 解析别名
         // TODO 增加哪些数据库识别哪些关键字作为别名的配置
         if (equalAny(Literals.IDENTIFIER, Literals.CHARS, DefaultKeyword.USER, DefaultKeyword.END, DefaultKeyword.CASE, DefaultKeyword.KEY, DefaultKeyword.INTERVAL, DefaultKeyword.CONSTRAINT)) {
             String result = SQLUtil.getExactlyValue(getLexer().getCurrentToken().getLiterals());
@@ -256,9 +252,11 @@ public class SQLParser extends AbstractParser {
     }
     
     private void parseConditions(final SQLStatement sqlStatement) {
+        // AND 查询
         do {
             parseComparisonCondition(sqlStatement);
         } while (skipIfEqual(DefaultKeyword.AND));
+        // 目前不支持 OR 条件
         if (equalAny(DefaultKeyword.OR)) {
             throw new SQLParsingUnsupportedException(getLexer().getCurrentToken().getType());
         }
@@ -300,8 +298,8 @@ public class SQLParser extends AbstractParser {
         getLexer().nextToken();
         SQLExpression right = parseExpression(sqlStatement);
         // TODO 如果有多表,且找不到column是哪个表的,则不加入condition,以后需要解析binding table
-        if ((sqlStatement.getTables().isSingleTable() || left instanceof SQLPropertyExpression)
-                && (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression)) {
+        if ((sqlStatement.getTables().isSingleTable()
+                || left instanceof SQLPropertyExpression) && (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression)) {
             Optional<Column> column = find(sqlStatement.getTables(), left);
             if (column.isPresent()) {
                 sqlStatement.getConditions().add(new Condition(column.get(), right), shardingRule);

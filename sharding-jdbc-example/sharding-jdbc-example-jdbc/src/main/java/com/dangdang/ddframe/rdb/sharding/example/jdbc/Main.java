@@ -54,7 +54,7 @@ public final class Main {
     }
 
     private static void printSimpleSelect(final DataSource dataSource) throws SQLException {
-//        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id WHERE o.user_id=? AND o.order_id=?";
+        // String sql = "SELECT o.*, i.item_id, i.create_time FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id WHERE o.user_id=? AND o.order_id=?";
 //        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id JOIN t_order_item2 i2 ON o.order_id=i2.order_id WHERE o.user_id=? AND o.order_id=?";
 //        String sql = "SELECT i.* FROM t_order o JOIN t_order_item i ON o.order_id=i.order_id ORDER BY i.order_id DESC";
 //        String sql = "SELECT @@VERSION"; // 带变量的 SQL
@@ -63,7 +63,44 @@ public final class Main {
 //        String sql = "SELECT 1.13E10 as C"; // 数字 和 AS
 //        String sql = "SELECT 1.321312FE100;;"; // 科学计数法 + 浮点数
 //        String sql = "select 1.321312E10;;"; // 数字 和 AS
-        String sql = "/** sb **/ SELECT `id  + `` 1`, group FROM t_user GROUP BY id"; // group by
+//        String sql = "/** sb **/ SELECT `id  + `` 1`, group FROM t_user GROUP BY id"; // group by
+//        String sql = "SELECT o.user_id, COUNT(DISTINCT i.item_id) AS item_count\n" +
+//                "FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id\n" +
+//                "WHERE o.user_id % 2 = 1\n" +
+//                "GROUP BY o.user_id\n" +
+//                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
+//                "LIMIT 2";
+//        String sql = "SELECT DISTINCT(o.user_id) `uid`, COUNT(DISTINCT i.item_id) AS item_count\n" +
+////        String sql = "SELECT u.user_id user_id, COUNT(DISTINCT i.item_id) AS item_count\n" +
+//                "FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id\n" +
+//                "WHERE o.user_id % 2 = 1\n" +
+//                "GROUP BY o.user_id\n" +
+//                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
+//                "LIMIT 2";
+//        String sql = "SELECT `*` FROM t_order";
+//        String sql = "SELECT '*', order_id FROM t_order ORDER order_id";
+//        String sql = "SELECT o.user_id, COUNT(DISTINCT i.item_id) AS item_count, MAX(i.item_id)\n" +
+//                "FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id\n" +
+//                "WHERE o.user_id % 2 = 1\n" +
+//                "GROUP BY o.user_id\n" +
+//                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
+//                "LIMIT 2;\n";
+//        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1"; // 不报错
+//        String sql = "SELECT o3.* FROM (SELECT * FROM t_order) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1";
+//        String sql = "SELECT o3.* FROM t_order o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1";
+//        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id ";
+//        String sql = "SELECT * FROM t_user u, t_order o WHERE u.user_id = o.user_id";
+//        String sql = "SELECT * FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id;";
+//        String sql = "SELECT * FROM t_order JOIN t_order_item_ USING (order_id);";
+//        String sql = "SELECT * FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id LEFT JOIN t_order_item i2 ON o.order_id = i2.order_id;";
+//        String sql = "SELECT o2.* FROM (SELECT * FROM t_order o) o2";
+//        String sql = "SELECT * FROM t_order WHERE (order_id = ? AND time > 0) GROUP BY user_id";
+//        String sql = "SELECT * FROM t_order WHERE (order_id = ? ) GROUP BY user_id";
+//        String sql = "SELECT * FROM t_order GROUP BY user_id";
+//        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id ORDER BY create_time DESC";
+//        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id";
+        String sql = "SELECT 1E100";
+//        String sql = "SELECT * FROM a JOIN b ON a.x = b.x JOIN c ON a.x = b.x;";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
