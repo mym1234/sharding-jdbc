@@ -77,12 +77,12 @@ public final class Main {
 //                "GROUP BY o.user_id\n" +
 //                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
 //                "LIMIT 2";
-//        String sql = "SELECT `*` FROM t_order";
+//        String sql = "SELECT `*` FROM t_order o ORDER BY o.order_id % 2"; // 测试解析表达式，复合表达式
 //        String sql = "SELECT '*', order_id FROM t_order ORDER order_id";
-//        String sql = "SELECT o.user_id, COUNT(DISTINCT i.item_id) AS item_count, MAX(i.item_id)\n" +
+//        String sql = "SELECT o.user_id, uid, COUNT(DISTINCT i.item_id) AS item_count, MAX(i.item_id)\n" +
 //                "FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id\n" +
 //                "WHERE o.user_id % 2 = 1\n" +
-//                "GROUP BY o.user_id\n" +
+//                "GROUP BY DATE(o.user_id)\n" +
 //                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
 //                "LIMIT 2;\n";
 //        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1"; // 不报错
@@ -99,8 +99,14 @@ public final class Main {
 //        String sql = "SELECT * FROM t_order GROUP BY user_id";
 //        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id ORDER BY create_time DESC";
 //        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id";
-        String sql = "SELECT 1E100";
+//        String sql = "SELECT 1E100";
 //        String sql = "SELECT * FROM a JOIN b ON a.x = b.x JOIN c ON a.x = b.x;";
+//        String sql = "INSERT INTO t_user(id, name) VALUES(1, 2)";
+//        String sql = "UPDATE t_user SET name = 'xiaoming'";
+//        String sql = "SELECT * FROM t_user u, t_order o WHERE u.user_id = o.user_id";
+//        String sql = "SELECT * FROM t_user u, t_order o WHERE 1 = o.user_id";
+//        String sql = "SELECT * FROM tbl_name1 WHERE (val1=?) AND (val2=?)  ";
+        String sql = "SELECT order_id FROM t_order o WHERE o.order_id = 1";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {

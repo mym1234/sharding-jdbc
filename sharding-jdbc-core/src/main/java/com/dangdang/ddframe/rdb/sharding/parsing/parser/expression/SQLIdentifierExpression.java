@@ -28,6 +28,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public final class SQLIdentifierExpression implements SQLExpression {
-    
+
+    /**
+     * 标识
+     */
     private final String name;
 }

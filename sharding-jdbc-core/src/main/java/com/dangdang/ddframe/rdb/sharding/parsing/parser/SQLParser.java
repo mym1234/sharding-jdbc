@@ -66,11 +66,38 @@ public class SQLParser extends AbstractParser {
      * @return 表达式
      */
     public final SQLExpression parseExpression(final SQLStatement sqlStatement) {
+        // 【调试代码】
+        StackTraceElement stack[] = (new Throwable()).getStackTrace();
+        System.out.println();
+        System.out.println(stack[1].getMethodName()); // 调用方法
+        System.out.println("begin：" + getLexer().getCurrentToken().getLiterals());
+
         int beginPosition = getLexer().getCurrentToken().getEndPosition();
         SQLExpression result = parseExpression();
         if (result instanceof SQLPropertyExpression) {
             setTableToken(sqlStatement, beginPosition, (SQLPropertyExpression) result);
         }
+
+        // 【调试代码】
+        System.out.print("end：");
+        if (result instanceof SQLIdentifierExpression) {
+            SQLIdentifierExpression exp = (SQLIdentifierExpression) result;
+            System.out.println(exp.getClass().getSimpleName() + "：" + exp.getName());
+        } else if (result instanceof SQLIgnoreExpression) {
+            SQLIgnoreExpression exp = (SQLIgnoreExpression) result;
+            System.out.println(exp.getClass().getSimpleName() + "：");
+        } else if (result instanceof SQLNumberExpression) {
+            SQLNumberExpression exp = (SQLNumberExpression) result;
+            System.out.println(exp.getClass().getSimpleName() + "：" + exp.getNumber());
+        } else if (result instanceof SQLPropertyExpression) {
+            SQLPropertyExpression exp = (SQLPropertyExpression) result;
+            System.out.println(exp.getClass().getSimpleName() + "：" + exp.getOwner().getName() + "\t" + exp.getName());
+        } else if (result instanceof SQLTextExpression) {
+            SQLTextExpression exp = (SQLTextExpression) result;
+            System.out.println(exp.getClass().getSimpleName() + "：" + exp.getText());
+        }
+        System.out.println();
+        System.out.println();
         return result;
     }
     
@@ -81,15 +108,20 @@ public class SQLParser extends AbstractParser {
      */
     // TODO 完善Expression解析的各种场景
     public final SQLExpression parseExpression() {
+        if (!(new Throwable()).getStackTrace()[1].getMethodName().equals("parseExpression")) {
+            System.out.println();
+        }
+        // 解析表达式
         String literals = getLexer().getCurrentToken().getLiterals();
         final SQLExpression expression = getExpression(literals);
+        // SQLIdentifierExpression 需要特殊处理。考虑自定义函数，表名.属性情况。
         if (skipIfEqual(Literals.IDENTIFIER)) {
-            if (skipIfEqual(Symbol.DOT)) {
+            if (skipIfEqual(Symbol.DOT)) { // 例如，ORDER BY o.uid 中的 "o.uid"
                 String property = getLexer().getCurrentToken().getLiterals();
                 getLexer().nextToken();
                 return skipIfCompositeExpression() ? new SQLIgnoreExpression() : new SQLPropertyExpression(new SQLIdentifierExpression(literals), property);
             }
-            if (equalAny(Symbol.LEFT_PAREN)) {
+            if (equalAny(Symbol.LEFT_PAREN)) { // 例如，GROUP BY DATE(create_time) 中的 "DATE(create_time)"
                 skipParentheses();
                 skipRestCompositeExpression();
                 return new SQLIgnoreExpression();
@@ -99,7 +131,13 @@ public class SQLParser extends AbstractParser {
         getLexer().nextToken();
         return skipIfCompositeExpression() ? new SQLIgnoreExpression() : expression;
     }
-    
+
+    /**
+     * 获得 词法Token 对应的 SQLExpression
+     *
+     * @param literals 词法字面量标记
+     * @return SQLExpression
+     */
     private SQLExpression getExpression(final String literals) {
         if (equalAny(Symbol.QUESTION)) {
             increaseParametersIndex();
@@ -124,7 +162,12 @@ public class SQLParser extends AbstractParser {
         }
         return new SQLIgnoreExpression();
     }
-    
+
+    /**
+     * 如果是 复合表达式，跳过。
+     *
+     * @return 是否跳过
+     */
     private boolean skipIfCompositeExpression() {
         if (equalAny(Symbol.PLUS, Symbol.SUB, Symbol.STAR, Symbol.SLASH, Symbol.PERCENT, Symbol.AMP, Symbol.BAR, Symbol.DOUBLE_AMP, Symbol.DOUBLE_BAR, Symbol.CARET, Symbol.DOT, Symbol.LEFT_PAREN)) {
             skipParentheses();
@@ -133,7 +176,10 @@ public class SQLParser extends AbstractParser {
         }
         return false;
     }
-    
+
+    /**
+     * 跳过剩余复合表达式
+     */
     private void skipRestCompositeExpression() {
         while (skipIfEqual(Symbol.PLUS, Symbol.SUB, Symbol.STAR, Symbol.SLASH, Symbol.PERCENT, Symbol.AMP, Symbol.BAR, Symbol.DOUBLE_AMP, Symbol.DOUBLE_BAR, Symbol.CARET, Symbol.DOT)) {
             if (equalAny(Symbol.QUESTION)) {
@@ -213,7 +259,7 @@ public class SQLParser extends AbstractParser {
     }
     
     /**
-     * 跳过表关联.
+     * 跳过表关联词法.
      *
      * @return 是否表关联.
      */
@@ -250,7 +296,13 @@ public class SQLParser extends AbstractParser {
             parseConditions(sqlStatement);
         }
     }
-    
+
+    /**
+     * 解析所有查询条件。
+     * 目前不支持 OR 条件。
+     *
+     * @param sqlStatement SQL
+     */
     private void parseConditions(final SQLStatement sqlStatement) {
         // AND 查询
         do {
@@ -263,6 +315,11 @@ public class SQLParser extends AbstractParser {
     }
     
     // TODO 解析组合expr
+    /**
+     * 解析单个查询条件
+     *
+     * @param sqlStatement SQL
+     */
     public final void parseComparisonCondition(final SQLStatement sqlStatement) {
         skipIfEqual(Symbol.LEFT_PAREN);
         SQLExpression left = parseExpression(sqlStatement);
@@ -296,21 +353,36 @@ public class SQLParser extends AbstractParser {
         }
         skipIfEqual(Symbol.RIGHT_PAREN);
     }
-    
+
+    /**
+     * 解析 = 条件
+     *
+     * @param sqlStatement SQL
+     * @param left 左SQLExpression
+     */
     private void parseEqualCondition(final SQLStatement sqlStatement, final SQLExpression left) {
         getLexer().nextToken();
         SQLExpression right = parseExpression(sqlStatement);
+        // 添加列
         // TODO 如果有多表,且找不到column是哪个表的,则不加入condition,以后需要解析binding table
-        if ((sqlStatement.getTables().isSingleTable()
-                || left instanceof SQLPropertyExpression) && (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression)) {
+        if ((sqlStatement.getTables().isSingleTable() || left instanceof SQLPropertyExpression)
+                // 只有对路由结果有影响的才会添加到 conditions。SQLPropertyExpression 和 SQLIdentifierExpression 无法判断，所以未加入 conditions
+                && (right instanceof SQLNumberExpression || right instanceof SQLTextExpression || right instanceof SQLPlaceholderExpression)) {
             Optional<Column> column = find(sqlStatement.getTables(), left);
             if (column.isPresent()) {
                 sqlStatement.getConditions().add(new Condition(column.get(), right), shardingRule);
             }
         }
     }
-    
+
+    /**
+     * 解析 IN 条件
+     *
+     * @param sqlStatement SQL
+     * @param left 左SQLExpression
+     */
     private void parseInCondition(final SQLStatement sqlStatement, final SQLExpression left) {
+        // 解析 IN 条件
         getLexer().nextToken();
         accept(Symbol.LEFT_PAREN);
         List<SQLExpression> rights = new LinkedList<>();
@@ -320,19 +392,29 @@ public class SQLParser extends AbstractParser {
             }
             rights.add(parseExpression(sqlStatement));
         } while (!equalAny(Symbol.RIGHT_PAREN));
+        // 添加列
         Optional<Column> column = find(sqlStatement.getTables(), left);
         if (column.isPresent()) {
             sqlStatement.getConditions().add(new Condition(column.get(), rights), shardingRule);
         }
+        // 解析下一个 TOKEN
         getLexer().nextToken();
     }
-    
+
+    /**
+     * 解析 BETWEEN 条件
+     *
+     * @param sqlStatement SQL
+     * @param left 左SQLExpression
+     */
     private void parseBetweenCondition(final SQLStatement sqlStatement, final SQLExpression left) {
+        // 解析 BETWEEN 条件
         getLexer().nextToken();
         List<SQLExpression> rights = new LinkedList<>();
         rights.add(parseExpression(sqlStatement));
         accept(DefaultKeyword.AND);
         rights.add(parseExpression(sqlStatement));
+        // 添加查询条件
         Optional<Column> column = find(sqlStatement.getTables(), left);
         if (column.isPresent()) {
             sqlStatement.getConditions().add(new Condition(column.get(), rights.get(0), rights.get(1)), shardingRule);
@@ -370,12 +452,24 @@ public class SQLParser extends AbstractParser {
             }
         }
     }
-    
+
+    /**
+     * 解析其他条件。目前其他条件包含 LIKE, <, <=, >, >=
+     *
+     * @param sqlStatement SQL
+     */
     private void parseOtherCondition(final SQLStatement sqlStatement) {
         getLexer().nextToken();
         parseExpression(sqlStatement);
     }
-    
+
+    /**
+     *
+     *
+     * @param tables 表
+     * @param sqlExpression SqlExpression
+     * @return 列
+     */
     private Optional<Column> find(final Tables tables, final SQLExpression sqlExpression) {
         if (sqlExpression instanceof SQLPropertyExpression) {
             return getColumnWithOwner(tables, (SQLPropertyExpression) sqlExpression);
@@ -385,13 +479,28 @@ public class SQLParser extends AbstractParser {
         }
         return Optional.absent();
     }
-    
+
+    /**
+     * 获得列
+     *
+     * @param tables 表
+     * @param propertyExpression SQLPropertyExpression
+     * @return 列
+     */
     private Optional<Column> getColumnWithOwner(final Tables tables, final SQLPropertyExpression propertyExpression) {
         Optional<Table> table = tables.find(SQLUtil.getExactlyValue((propertyExpression.getOwner()).getName()));
         return propertyExpression.getOwner() instanceof SQLIdentifierExpression && table.isPresent()
                 ? Optional.of(new Column(SQLUtil.getExactlyValue(propertyExpression.getName()), table.get().getName())) : Optional.<Column>absent();
     }
-    
+
+    /**
+     * 获得列
+     * 只有是单表的情况下，才能获得到列
+     *
+     * @param tables 表
+     * @param identifierExpression SQLIdentifierExpression
+     * @return 列
+     */
     private Optional<Column> getColumnWithoutOwner(final Tables tables, final SQLIdentifierExpression identifierExpression) {
         return tables.isSingleTable() ? Optional.of(new Column(SQLUtil.getExactlyValue(identifierExpression.getName()), tables.getSingleTableName())) : Optional.<Column>absent();
     }

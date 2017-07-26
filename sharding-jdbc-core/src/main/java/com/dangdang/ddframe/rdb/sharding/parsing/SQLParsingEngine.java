@@ -41,11 +41,18 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 public final class SQLParsingEngine {
-    
+
+    /**
+     * 数据库类型
+     */
     private final DatabaseType dbType;
-    
+    /**
+     * SQL
+     */
     private final String sql;
-    
+    /**
+     * 分片规则
+     */
     private final ShardingRule shardingRule;
     
     /**
@@ -54,11 +61,14 @@ public final class SQLParsingEngine {
      * @return SQL语句对象
      */
     public SQLStatement parse() {
+        // 获取 SQL解析器
         SQLParser sqlParser = getSQLParser();
-        sqlParser.skipIfEqual(Symbol.SEMI);
-        if (sqlParser.equalAny(DefaultKeyword.WITH)) { // TODO 疑问
+        //
+        sqlParser.skipIfEqual(Symbol.SEMI); // 跳过 ";"
+        if (sqlParser.equalAny(DefaultKeyword.WITH)) { // WITH Syntax
             skipWith(sqlParser);
         }
+        // 获取对应 SQL语句解析器 解析SQL
         if (sqlParser.equalAny(DefaultKeyword.SELECT)) {
             return SelectParserFactory.newInstance(sqlParser).parse();
         }
@@ -89,7 +99,18 @@ public final class SQLParsingEngine {
                 throw new UnsupportedOperationException(dbType.name());
         }
     }
-    
+
+    /**
+     * 跳过  WITH Syntax 语法
+     * https://dev.mysql.com/doc/refman/8.0/en/with.html
+     *
+     * @param sqlParser SQL 解析器
+     */
+//    WITH
+//      cte1 AS (SELECT a, b FROM table1),
+//      cte2 AS (SELECT c, d FROM table2)
+//    SELECT b, d FROM cte1 JOIN cte2
+//    WHERE cte1.a = cte2.c;
     private void skipWith(final SQLParser sqlParser) {
         sqlParser.getLexer().nextToken();
         do {

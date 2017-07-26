@@ -46,7 +46,7 @@ public enum Literals implements TokenType {
     CHARS,
     /**
      * 词法关键词
-     * 例如：表名，查询字段 等等
+     * 例如：表名，查询字段，函数 等等
      */
     IDENTIFIER,
     /**
