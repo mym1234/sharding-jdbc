@@ -85,7 +85,7 @@ public final class Main {
 //                "GROUP BY DATE(o.user_id)\n" +
 //                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
 //                "LIMIT 2;\n";
-//        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1"; // 不报错
+        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1"; // 不报错
 //        String sql = "SELECT o3.* FROM (SELECT * FROM t_order) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1";
 //        String sql = "SELECT o3.* FROM t_order o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1";
 //        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id ";
@@ -106,7 +106,8 @@ public final class Main {
 //        String sql = "SELECT * FROM t_user u, t_order o WHERE u.user_id = o.user_id";
 //        String sql = "SELECT * FROM t_user u, t_order o WHERE 1 = o.user_id";
 //        String sql = "SELECT * FROM tbl_name1 WHERE (val1=?) AND (val2=?)  ";
-        String sql = "SELECT order_id FROM t_order o WHERE o.order_id = 1";
+//        String sql = "SELECT order_id FROM t_order o WHERE o.order_id = 1";
+        //
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
