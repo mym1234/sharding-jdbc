@@ -120,12 +120,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     protected final void parseSelectList() {
         do {
             // 解析 选择项
-            SelectItem selectItem = parseSelectItem();
-            selectStatement.getItems().add(selectItem);
-            // SELECT * 项
-            if (selectItem instanceof CommonSelectItem && ((CommonSelectItem) selectItem).isStar()) {
-                selectStatement.setContainStar(true);
-            }
+            parseSelectItem();
         } while (sqlParser.skipIfEqual(Symbol.COMMA));
         // 设置 最后一个查询项下一个 Token 的开始位置
         selectStatement.setSelectListLastPosition(sqlParser.getLexer().getCurrentToken().getEndPosition() - sqlParser.getLexer().getCurrentToken().getLiterals().length());
@@ -136,21 +131,25 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
      *
      * @return 选择项
      */
-    private SelectItem parseSelectItem() {
+    private void parseSelectItem() {
         // 第四种情况，SQL Server 独有
         if (isRowNumberSelectItem()) {
-            return parseRowNumberSelectItem(selectStatement);
+            selectStatement.getItems().add(parseRowNumberSelectItem());
+            return;
         }
         sqlParser.skipIfEqual(DefaultKeyword.CONNECT_BY_ROOT); // Oracle 独有：https://docs.oracle.com/cd/B19306_01/server.102/b14200/operators004.htm
         String literals = sqlParser.getLexer().getCurrentToken().getLiterals();
         // 第一种情况，* 通用选择项，SELECT *
         if (sqlParser.equalAny(Symbol.STAR) || Symbol.STAR.getLiterals().equals(SQLUtil.getExactlyValue(literals))) {
             sqlParser.getLexer().nextToken();
-            return new CommonSelectItem(Symbol.STAR.getLiterals(), sqlParser.parseAlias(), true);
+            selectStatement.getItems().add(new CommonSelectItem(Symbol.STAR.getLiterals(), sqlParser.parseAlias()));
+            selectStatement.setContainStar(true);
+            return;
         }
         // 第二种情况，聚合选择项
         if (sqlParser.skipIfEqual(DefaultKeyword.MAX, DefaultKeyword.MIN, DefaultKeyword.SUM, DefaultKeyword.AVG, DefaultKeyword.COUNT)) {
-            return new AggregationSelectItem(AggregationType.valueOf(literals.toUpperCase()), sqlParser.skipParentheses(), sqlParser.parseAlias());
+            selectStatement.getItems().add(new AggregationSelectItem(AggregationType.valueOf(literals.toUpperCase()), sqlParser.skipParentheses(), sqlParser.parseAlias()));
+            return;
         }
         // 第三种情况，非 * 通用选择项
         StringBuilder expression = new StringBuilder();
@@ -169,17 +168,19 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         if (null != lastToken && Literals.IDENTIFIER == lastToken.getType()
                 && !isSQLPropertyExpression(expression, lastToken) // 过滤掉，别名是自己的情况【1】（例如，SELECT u.user_id u.user_id FROM t_user）
                 && !expression.toString().equals(lastToken.getLiterals())) { // 过滤掉，无别名的情况【2】（例如，SELECT user_id FROM t_user）
-            return new CommonSelectItem(SQLUtil.getExactlyValue(expression.substring(0, expression.lastIndexOf(lastToken.getLiterals()))), Optional.of(lastToken.getLiterals()), false);
+            selectStatement.getItems().add(
+                    new CommonSelectItem(SQLUtil.getExactlyValue(expression.substring(0, expression.lastIndexOf(lastToken.getLiterals()))), Optional.of(lastToken.getLiterals())));
+            return;
         }
         // 带 AS（例如，SELECT user_id AS userId） 或者 无别名（例如，SELECT user_id）
-        return new CommonSelectItem(SQLUtil.getExactlyValue(expression.toString()), sqlParser.parseAlias(), false);
+        selectStatement.getItems().add(new CommonSelectItem(SQLUtil.getExactlyValue(expression.toString()), sqlParser.parseAlias()));
     }
     
     protected boolean isRowNumberSelectItem() {
         return false;
     }
     
-    protected SelectItem parseRowNumberSelectItem(final SelectStatement selectStatement) {
+    protected SelectItem parseRowNumberSelectItem() {
         throw new UnsupportedOperationException("Cannot support special select item.");
     }
 

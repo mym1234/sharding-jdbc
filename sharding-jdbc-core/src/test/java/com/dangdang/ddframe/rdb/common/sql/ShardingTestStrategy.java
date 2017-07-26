@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,29 +15,8 @@
  * </p>
  */
 
-package com.dangdang.ddframe.rdb.sharding.parsing.parser.context.selectitem;
+package com.dangdang.ddframe.rdb.common.sql;
 
-import com.google.common.base.Optional;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-
-/**
- * 通用选择项.
- *
- * @author zhangliang
- */
-@RequiredArgsConstructor
-@Getter
-@ToString
-public final class CommonSelectItem implements SelectItem {
-
-    /**
-     * 表达式
-     */
-    private final String expression;
-    /**
-     * 别名
-     */
-    private final Optional<String> alias;
+public enum ShardingTestStrategy {
+    tbl, db, dbtbl, masterslave
 }
