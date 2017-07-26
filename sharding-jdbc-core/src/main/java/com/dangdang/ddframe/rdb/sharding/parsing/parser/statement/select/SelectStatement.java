@@ -54,17 +54,25 @@ public final class SelectStatement extends AbstractSQLStatement {
      * @see #items
      */
     private int selectListLastPosition;
-
+    /**
+     * 最后一个分组项下一个 Token 的开始位置
+     */
     private int groupByLastPosition;
     /**
      * 查询项
      */
     private final List<SelectItem> items = new LinkedList<>();
-    
+    /**
+     * 分组项
+     */
     private final List<OrderItem> groupByItems = new LinkedList<>();
-    
+    /**
+     * 排序项
+     */
     private final List<OrderItem> orderByItems = new LinkedList<>();
-    
+    /**
+     * 分页
+     */
     private Limit limit;
     
     public SelectStatement() {

@@ -37,13 +37,22 @@ import java.util.List;
 @Getter
 @ToString
 public abstract class AbstractSQLStatement implements SQLStatement {
-    
+
+    /**
+     * SQL 类型
+     */
     private final SQLType type;
-    
+    /**
+     * 表
+     */
     private final Tables tables = new Tables();
-    
+    /**
+     * 过滤条件
+     */
     private final Conditions conditions = new Conditions();
-    
+    /**
+     * SQL标记对象
+     */
     private final List<SQLToken> sqlTokens = new LinkedList<>();
     
     @Override
