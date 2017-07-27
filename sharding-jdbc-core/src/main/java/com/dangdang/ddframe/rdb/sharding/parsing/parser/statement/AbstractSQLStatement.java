@@ -47,7 +47,8 @@ public abstract class AbstractSQLStatement implements SQLStatement {
      */
     private final Tables tables = new Tables();
     /**
-     * 过滤条件
+     * 过滤条件。
+     * 只有对路由结果有影响的条件，才添加进数组
      */
     private final Conditions conditions = new Conditions();
     /**

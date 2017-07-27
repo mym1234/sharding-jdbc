@@ -73,9 +73,9 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     public final SelectStatement parse() {
         query();
         parseOrderBy();
-        customizedSelect(); // TODO oracle sqlserver 特殊
-        appendDerivedColumns(); // TODO 推到字段？
-        appendDerivedOrderBy(); // TODO 推到排序？
+        customizedSelect();
+        appendDerivedColumns();
+        appendDerivedOrderBy();
         return selectStatement;
     }
     
@@ -128,8 +128,6 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
 
     /**
      * 解析单个选择项
-     *
-     * @return 选择项
      */
     private void parseSelectItem() {
         // 第四种情况，SQL Server 独有
@@ -185,7 +183,8 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     }
 
     /**
-     *
+     * 是否 表达式 以 "." + lastToken 结尾。
+     * 目前用于判断：SELECT u.user_id u.user_id FROM t_user 情况
      *
      * @param expression 表达式
      * @param lastToken 最后 Token
@@ -217,16 +216,24 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         sqlParser.skipIfEqual(DefaultKeyword.SIBLINGS);
         sqlParser.accept(DefaultKeyword.BY);
         do {
+            // 解析单个 OrderBy
             Optional<OrderItem> orderItem = parseSelectOrderByItem();
             if (orderItem.isPresent()) {
                 result.add(orderItem.get());
             }
         }
         while (sqlParser.skipIfEqual(Symbol.COMMA));
+        // OrderItem
         selectStatement.getOrderByItems().addAll(result);
     }
-    
+
+    /**
+     * 解析单个排序项
+     *
+     * @return 排序项
+     */
     protected Optional<OrderItem> parseSelectOrderByItem() {
+        // ASC / DESC
         SQLExpression sqlExpression = sqlParser.parseExpression(selectStatement);
         OrderType orderByType = OrderType.ASC;
         if (sqlParser.skipIfEqual(DefaultKeyword.ASC)) {
@@ -234,8 +241,9 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         } else if (sqlParser.skipIfEqual(DefaultKeyword.DESC)) {
             orderByType = OrderType.DESC;
         }
+        // 解析 OrderItem
         OrderItem result;
-        if (sqlExpression instanceof SQLNumberExpression) {
+        if (sqlExpression instanceof SQLNumberExpression) { // ORDER BY 数字 的 数字代表的是第几个字段。
             result = new OrderItem(((SQLNumberExpression) sqlExpression).getNumber().intValue(), orderByType);
         } else if (sqlExpression instanceof SQLIdentifierExpression) {
             result = new OrderItem(
@@ -279,6 +287,8 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
 
     /**
      * 解析 Group By 单个字段
+     * Group By 条件是带有排序功能，默认ASC
+     *
      * @param sqlExpression 表达式
      */
     protected final void addGroupByItem(final SQLExpression sqlExpression) {
@@ -289,6 +299,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         } else if (sqlParser.skipIfEqual(DefaultKeyword.DESC)) {
             orderByType = OrderType.DESC;
         }
+        // 解析 OrderItem
         OrderItem orderItem;
         if (sqlExpression instanceof SQLPropertyExpression) {
             SQLPropertyExpression sqlPropertyExpression = (SQLPropertyExpression) sqlExpression;
@@ -302,7 +313,13 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         }
         selectStatement.getGroupByItems().add(orderItem);
     }
-    
+
+    /**
+     * 字段在查询项里的别名
+     *
+     * @param name 字段
+     * @return 别名
+     */
     private Optional<String> getAlias(final String name) {
         if (selectStatement.isContainStar()) {
             return Optional.absent();
@@ -334,11 +351,10 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     public void parseTable() {
         // 解析子查询
         if (sqlParser.skipIfEqual(Symbol.LEFT_PAREN)) {
-            // TODO 疑问：为啥不支持第二个子查询
             if (!selectStatement.getTables().isEmpty()) {
                 throw new UnsupportedOperationException("Cannot support subquery for nested tables.");
             }
-            selectStatement.setContainStar(false);
+            selectStatement.setContainStar(false); // TODO 疑问
             // 去掉子查询左括号
             sqlParser.skipUselessParentheses();
             // 解析子查询 SQL
@@ -364,7 +380,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         String literals = sqlParser.getLexer().getCurrentToken().getLiterals();
         sqlParser.getLexer().nextToken();
         // TODO 包含Schema解析
-        if (sqlParser.skipIfEqual(Symbol.DOT)) { // TODO 待读
+        if (sqlParser.skipIfEqual(Symbol.DOT)) { // https://dev.mysql.com/doc/refman/5.7/en/information-schema.html ：SELECT table_name, table_type, engine FROM information_schema.tables
             sqlParser.getLexer().nextToken();
             sqlParser.parseAlias();
             return;
@@ -377,10 +393,11 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
 
     /**
      * 解析 Join Table 或者 FROM 下一张 Table
-     *
      */
     protected void parseJoinTable() {
         if (sqlParser.skipJoin()) {
+            // 这里调用 parseJoinTable() 而不是 parseTableFactor() ：下一个 Table 可能是子查询
+            // 例如：SELECT * FROM t_order JOIN (SELECT * FROM t_order_item JOIN t_order_other ON ) .....
             parseTable();
             if (sqlParser.skipIfEqual(DefaultKeyword.ON)) { // JOIN 表时 ON 条件
                 do {
@@ -393,17 +410,21 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
                                                                         // SELECT * FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id
                 sqlParser.skipParentheses();
             }
-            parseJoinTable(); // TODO 疑问：这里为啥要 parseJoinTable
+            parseJoinTable(); // 继续递归
         }
     }
-    
+
+    /**
+     * 解析 ON 条件里的 TableToken
+     *
+     * @param startPosition 开始位置
+     */
     private void parseTableCondition(final int startPosition) {
         SQLExpression sqlExpression = sqlParser.parseExpression();
         if (!(sqlExpression instanceof SQLPropertyExpression)) {
             return;
         }
         SQLPropertyExpression sqlPropertyExpression = (SQLPropertyExpression) sqlExpression;
-        // TODO 疑问：sqlToken
         if (selectStatement.getTables().getTableNames().contains(SQLUtil.getExactlyValue(sqlPropertyExpression.getOwner().getName()))) {
             selectStatement.getSqlTokens().add(new TableToken(startPosition, sqlPropertyExpression.getOwner().getName()));
         }

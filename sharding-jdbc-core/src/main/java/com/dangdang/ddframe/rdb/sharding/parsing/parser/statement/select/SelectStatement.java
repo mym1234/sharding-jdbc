@@ -46,7 +46,9 @@ public final class SelectStatement extends AbstractSQLStatement {
      * 是否行 DISTINCT / DISTINCTROW / UNION
      */
     private boolean distinct;
-    
+    /**
+     * 是否查询所有字段，即 SELECT *
+     */
     private boolean containStar;
     /**
      * 最后一个查询项下一个 Token 的开始位置

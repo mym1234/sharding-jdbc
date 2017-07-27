@@ -24,8 +24,6 @@ import com.dangdang.ddframe.rdb.sharding.parsing.lexer.token.DefaultKeyword;
 import com.dangdang.ddframe.rdb.sharding.parsing.lexer.token.Literals;
 import com.dangdang.ddframe.rdb.sharding.parsing.lexer.token.Symbol;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.SQLParser;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.exception.SQLParsingUnsupportedException;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.select.AbstractSelectParser;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.limit.Limit;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.limit.LimitValue;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.exception.SQLParsingException;
@@ -97,11 +95,19 @@ public class MySQLSelectParser extends AbstractSelectParser {
         // TODO 疑问：待定
         queryRest();
     }
-    
+
+    /**
+     * 解析 Limit
+     * 一共三种情况：
+     * 1. LIMIT row_count
+     * 2. LIMIT offset, row_count
+     * 3. LIMIT row_count, offset
+     */
     private void parseLimit() {
         if (!getSqlParser().skipIfEqual(MySQLKeyword.LIMIT)) {
             return;
         }
+        //
         int valueIndex = -1;
         int valueBeginPosition = getSqlParser().getLexer().getCurrentToken().getEndPosition();
         int value;
@@ -117,18 +123,22 @@ public class MySQLSelectParser extends AbstractSelectParser {
         } else {
             throw new SQLParsingException(getSqlParser().getLexer());
         }
+        // LIMIT offset, row_count
         getSqlParser().getLexer().nextToken();
         if (getSqlParser().skipIfEqual(Symbol.COMMA)) {
             getSelectStatement().setLimit(getLimitWithComma(getSelectStatement(), getParametersIndex(), valueIndex, valueBeginPosition, value, isParameterForValue));
             return;
         }
+        // LIMIT row_count, offset
         if (getSqlParser().skipIfEqual(MySQLKeyword.OFFSET)) {
             getSelectStatement().setLimit(getLimitWithOffset(getSelectStatement(), getParametersIndex(), valueIndex, valueBeginPosition, value, isParameterForValue));
             return;
         }
+        //
         if (!isParameterForValue) {
             getSelectStatement().getSqlTokens().add(new RowCountToken(valueBeginPosition, value));
         }
+        // Limit
         Limit limit = new Limit(true);
         limit.setRowCount(new LimitValue(value, valueIndex));
         getSelectStatement().setLimit(limit);
@@ -190,13 +200,61 @@ public class MySQLSelectParser extends AbstractSelectParser {
         result.setOffset(new LimitValue(offsetValue, offsetIndex));
         return result;
     }
-    
+
+    /**
+     * 跳到 FROM 处
+     */
     private void skipToFrom() {
         while (!getSqlParser().equalAny(DefaultKeyword.FROM) && !getSqlParser().equalAny(Assist.END)) {
             getSqlParser().getLexer().nextToken();
         }
     }
-    
+
+    /**
+     * 解析 JoinTable
+     * https://dev.mysql.com/doc/refman/5.7/en/join.html
+     */
+//    table_references:
+//    escaped_table_reference [, escaped_table_reference] ...
+//
+//    escaped_table_reference:
+//    table_reference
+//  | { OJ table_reference }
+//
+//    table_reference:
+//    table_factor
+//  | join_table
+//
+//    table_factor:
+//    tbl_name [PARTITION (partition_names)]
+//            [[AS] alias] [index_hint_list]
+//            | table_subquery [AS] alias
+//  | ( table_references )
+//
+//    join_table:
+//    table_reference [INNER | CROSS] JOIN table_factor [join_condition]
+//            | table_reference STRAIGHT_JOIN table_factor
+//  | table_reference STRAIGHT_JOIN table_factor ON conditional_expr
+//  | table_reference {LEFT|RIGHT} [OUTER] JOIN table_reference join_condition
+//  | table_reference NATURAL [{LEFT|RIGHT} [OUTER]] JOIN table_factor
+//
+//    join_condition:
+//    ON conditional_expr
+//  | USING (column_list)
+//
+//    index_hint_list:
+//    index_hint [, index_hint] ...
+//
+//    index_hint:
+//    USE {INDEX|KEY}
+//      [FOR {JOIN|ORDER BY|GROUP BY}] ([index_list])
+//            | IGNORE {INDEX|KEY}
+//      [FOR {JOIN|ORDER BY|GROUP BY}] (index_list)
+//            | FORCE {INDEX|KEY}
+//      [FOR {JOIN|ORDER BY|GROUP BY}] (index_list)
+//
+//    index_list:
+//    index_name [, index_name] ...
     @Override
     protected void parseJoinTable() {
         if (getSqlParser().equalAny(DefaultKeyword.USING)) {
@@ -217,6 +275,9 @@ public class MySQLSelectParser extends AbstractSelectParser {
         super.parseJoinTable();
     }
 
+    /**
+     * 解析 Index Hint
+     */
     private void parseIndexHint() {
         if (getSqlParser().equalAny(DefaultKeyword.INDEX)) {
             getSqlParser().getLexer().nextToken();

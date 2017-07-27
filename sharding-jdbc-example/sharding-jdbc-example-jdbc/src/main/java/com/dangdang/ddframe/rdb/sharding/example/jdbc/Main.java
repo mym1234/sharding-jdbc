@@ -85,7 +85,7 @@ public final class Main {
 //                "GROUP BY DATE(o.user_id)\n" +
 //                "ORDER BY COUNT(DISTINCT i.item_id) DESC, user_id DESC\n" +
 //                "LIMIT 2;\n";
-        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1"; // 不报错
+//        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1"; // 不报错
 //        String sql = "SELECT o3.* FROM (SELECT * FROM t_order) o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1";
 //        String sql = "SELECT o3.* FROM t_order o3 JOIN t_order_item i ON o3.order_id = i.order_id LIMIT 0, 1";
 //        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id ";
@@ -97,7 +97,7 @@ public final class Main {
 //        String sql = "SELECT * FROM t_order WHERE (order_id = ? AND time > 0) GROUP BY user_id";
 //        String sql = "SELECT * FROM t_order WHERE (order_id = ? ) GROUP BY user_id";
 //        String sql = "SELECT * FROM t_order GROUP BY user_id";
-//        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id ORDER BY create_time DESC";
+        String sql = "SELECT user_id FROM t_order GROUP BY user_id ORDER BY create_time DESC";
 //        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id";
 //        String sql = "SELECT 1E100";
 //        String sql = "SELECT * FROM a JOIN b ON a.x = b.x JOIN c ON a.x = b.x;";
@@ -107,7 +107,15 @@ public final class Main {
 //        String sql = "SELECT * FROM t_user u, t_order o WHERE 1 = o.user_id";
 //        String sql = "SELECT * FROM tbl_name1 WHERE (val1=?) AND (val2=?)  ";
 //        String sql = "SELECT order_id FROM t_order o WHERE o.order_id = 1";
+//        String sql = "INSERT INTO tbl_temp2 (fld_id)\n" +
+//                "  SELECT tbl_temp1.fld_order_id\n" +
+//                "  FROM tbl_temp1 WHERE tbl_temp1.fld_order_id > 100;";
+//        String sql = "UPDATE t_user set nickname = ? WHERE id = 123";
+//        String sql = "SELECT COUNT(user_id) FROM t_user";
         // f
+//        String sql = "SELECT o.id FROM t_order o";
+//        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id;";
+//        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id;";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {

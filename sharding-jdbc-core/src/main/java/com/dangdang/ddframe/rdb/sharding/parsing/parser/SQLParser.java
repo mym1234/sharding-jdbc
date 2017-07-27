@@ -228,7 +228,7 @@ public class SQLParser extends AbstractParser {
     public final void parseSingleTable(final SQLStatement sqlStatement) {
         boolean hasParentheses = false;
         if (skipIfEqual(Symbol.LEFT_PAREN)) {
-            if (equalAny(DefaultKeyword.SELECT)) {
+            if (equalAny(DefaultKeyword.SELECT)) { // multiple-update 或者 multiple-delete
                 throw new UnsupportedOperationException("Cannot support subquery");
             }
             hasParentheses = true;
@@ -249,7 +249,7 @@ public class SQLParser extends AbstractParser {
             }
             table = new Table(SQLUtil.getExactlyValue(literals), parseAlias());
         }
-        if (skipJoin()) {
+        if (skipJoin()) { // multiple-update 或者 multiple-delete
             throw new UnsupportedOperationException("Cannot support Multiple-Table.");
         }
         sqlStatement.getSqlTokens().add(new TableToken(beginPosition, literals));
