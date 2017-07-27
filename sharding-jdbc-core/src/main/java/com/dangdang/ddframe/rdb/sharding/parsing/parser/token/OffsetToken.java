@@ -28,8 +28,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public final class OffsetToken implements SQLToken {
-    
+    /**
+     * SQL 所在开始位置
+     */
     private final int beginPosition;
-    
+    /**
+     * 偏移值
+     */
     private final int offset;
 }

@@ -97,7 +97,7 @@ public final class Main {
 //        String sql = "SELECT * FROM t_order WHERE (order_id = ? AND time > 0) GROUP BY user_id";
 //        String sql = "SELECT * FROM t_order WHERE (order_id = ? ) GROUP BY user_id";
 //        String sql = "SELECT * FROM t_order GROUP BY user_id";
-        String sql = "SELECT user_id FROM t_order GROUP BY user_id ORDER BY create_time DESC";
+//        String sql = "SELECT user_id FROM t_order GROUP BY user_id ORDER BY create_time DESC";
 //        String sql = "SELECT COUNT(order_id) FROM t_order GROUP BY user_id";
 //        String sql = "SELECT 1E100";
 //        String sql = "SELECT * FROM a JOIN b ON a.x = b.x JOIN c ON a.x = b.x;";
@@ -116,6 +116,8 @@ public final class Main {
 //        String sql = "SELECT o.id FROM t_order o";
 //        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id;";
 //        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id;";
+//        String sql = "SELECT order_id FROM t_order ORDER BY order_id";
+        String sql = "SELECT order_id FROM t_order o ORDER BY o.order_id";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {

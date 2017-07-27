@@ -23,11 +23,15 @@ import lombok.RequiredArgsConstructor;
 /**
  * 排序标记对象.
  *
+ *
  * @author zhangliang
  */
 @RequiredArgsConstructor
 @Getter
 public final class OrderByToken implements SQLToken {
-    
+
+    /**
+     * SQL 所在开始位置
+     */
     private final int beginPosition;
 }

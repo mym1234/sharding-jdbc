@@ -52,7 +52,10 @@ public final class AggregationSelectItem implements SelectItem {
      * 别名
      */
     private final Optional<String> alias;
-    
+    /**
+     * 推导字段
+     * 目前只有 AVG 聚合选择项需要用到：AVG 改写成 SUM + COUNT 查询，内存计算出 AVG 结果。
+     */
     private final List<AggregationSelectItem> derivedAggregationSelectItems = new ArrayList<>(2);
     
     @Setter

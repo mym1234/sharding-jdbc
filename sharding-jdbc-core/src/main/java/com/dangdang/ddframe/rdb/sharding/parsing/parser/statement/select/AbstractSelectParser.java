@@ -452,24 +452,33 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
             selectStatement.getSqlTokens().add(new TableToken(startPosition, sqlPropertyExpression.getOwner().getName()));
         }
     }
-    
+
+    /**
+     * 增加推导字段
+     */
     private void appendDerivedColumns() {
         if (appendDerivedColumnsFlag) {
             return;
         }
         appendDerivedColumnsFlag = true;
         ItemsToken itemsToken = new ItemsToken(selectStatement.getSelectListLastPosition());
-        // AVG
+        // AVG 聚合字段
         appendAvgDerivedColumns(itemsToken);
-        //
+        // ORDER BY
         appendDerivedOrderColumns(itemsToken, selectStatement.getOrderByItems(), ORDER_BY_DERIVED_ALIAS);
-        //
+        // GROUP BY
         appendDerivedOrderColumns(itemsToken, selectStatement.getGroupByItems(), GROUP_BY_DERIVED_ALIAS);
         if (!itemsToken.getItems().isEmpty()) {
             selectStatement.getSqlTokens().add(itemsToken);
         }
     }
-    
+
+    /**
+     * 针对 AVG 聚合字段，增加推导字段
+     * AVG 改写成 SUM + COUNT 查询，内存计算出 AVG 结果。
+     *
+     * @param itemsToken 选择项标记对象
+     */
     private void appendAvgDerivedColumns(final ItemsToken itemsToken) {
         int derivedColumnOffset = 0;
         for (SelectItem each : selectStatement.getItems()) {
@@ -477,19 +486,32 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
                 continue;
             }
             AggregationSelectItem avgItem = (AggregationSelectItem) each;
+            // COUNT 字段
             String countAlias = String.format(DERIVED_COUNT_ALIAS, derivedColumnOffset);
             AggregationSelectItem countItem = new AggregationSelectItem(AggregationType.COUNT, avgItem.getInnerExpression(), Optional.of(countAlias));
+            // SUM 字段
             String sumAlias = String.format(DERIVED_SUM_ALIAS, derivedColumnOffset);
             AggregationSelectItem sumItem = new AggregationSelectItem(AggregationType.SUM, avgItem.getInnerExpression(), Optional.of(sumAlias));
+            // AggregationSelectItem 设置
             avgItem.getDerivedAggregationSelectItems().add(countItem);
             avgItem.getDerivedAggregationSelectItems().add(sumItem);
             // TODO 将AVG列替换成常数，避免数据库再计算无用的AVG函数
+            // ItemsToken
             itemsToken.getItems().add(countItem.getExpression() + " AS " + countAlias + " ");
             itemsToken.getItems().add(sumItem.getExpression() + " AS " + sumAlias + " ");
+            //
             derivedColumnOffset++;
         }
     }
-    
+
+    /**
+     * 针对 GROUP BY 或 ORDER BY 字段，增加推导字段
+     * 如果该字段不在查询字段里，需要额外查询该字段，这样才能在内存里 GROUP BY 或 ORDER BY
+     *
+     * @param itemsToken 选择项标记对象
+     * @param orderItems 排序字段
+     * @param aliasPattern 别名模式
+     */
     private void appendDerivedOrderColumns(final ItemsToken itemsToken, final List<OrderItem> orderItems, final String aliasPattern) {
         int derivedColumnOffset = 0;
         for (OrderItem each : orderItems) {
@@ -500,19 +522,25 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
             }
         }
     }
-    
+
+    /**
+     * 查询字段是否包含排序字段
+     *
+     * @param orderItem 排序字段
+     * @return 是否
+     */
     private boolean isContainsItem(final OrderItem orderItem) {
-        if (selectStatement.isContainStar()) {
+        if (selectStatement.isContainStar()) { // SELECT *
             return true;
         }
         for (SelectItem each : selectStatement.getItems()) {
-            if (-1 != orderItem.getIndex()) {
+            if (-1 != orderItem.getIndex()) { // ORDER BY 使用数字
                 return true;
             }
-            if (each.getAlias().isPresent() && orderItem.getAlias().isPresent() && each.getAlias().get().equalsIgnoreCase(orderItem.getAlias().get())) {
+            if (each.getAlias().isPresent() && orderItem.getAlias().isPresent() && each.getAlias().get().equalsIgnoreCase(orderItem.getAlias().get())) { // 字段别名比较
                 return true;
             }
-            if (!each.getAlias().isPresent() && orderItem.getQualifiedName().isPresent() && each.getExpression().equalsIgnoreCase(orderItem.getQualifiedName().get())) {
+            if (!each.getAlias().isPresent() && orderItem.getQualifiedName().isPresent() && each.getExpression().equalsIgnoreCase(orderItem.getQualifiedName().get())) { // 字段原名比较
                 return true;
             }
         }
@@ -520,7 +548,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     }
 
     /**
-     * 当无 Order By 条件时，使用 Group By 作为排序条件
+     * 当无 Order By 条件时，使用 Group By 作为排序条件（数据库本身规则）
      */
     private void appendDerivedOrderBy() {
         if (!getSelectStatement().getGroupByItems().isEmpty() && getSelectStatement().getOrderByItems().isEmpty()) {

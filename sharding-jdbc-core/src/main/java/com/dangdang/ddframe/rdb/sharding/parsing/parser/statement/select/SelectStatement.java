@@ -48,6 +48,7 @@ public final class SelectStatement extends AbstractSQLStatement {
     private boolean distinct;
     /**
      * 是否查询所有字段，即 SELECT *
+     * 单独加了这个字段的标志原因是，一些业务地方会判断是否需要的字段已经查询，例如 GROUP BY / ORDER BY
      */
     private boolean containStar;
     /**

@@ -28,8 +28,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public final class RowCountToken implements SQLToken {
-    
+    /**
+     * SQL 所在开始位置
+     */
     private final int beginPosition;
-    
+    /**
+     * 行数
+     */
     private final int rowCount;
 }

@@ -39,12 +39,17 @@ import java.util.List;
 public final class Limit {
 
     /**
-     * TODO 疑问：可能和重写有关
+     * 是否重写rowCount
+     * TODO 待补充：预计和内存分页合并有关
      */
     private final boolean rowCountRewriteFlag;
-    
+    /**
+     * offset
+     */
     private LimitValue offset;
-    
+    /**
+     * row
+     */
     private LimitValue rowCount;
     
     /**

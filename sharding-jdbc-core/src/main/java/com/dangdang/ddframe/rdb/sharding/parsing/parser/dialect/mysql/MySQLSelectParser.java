@@ -106,7 +106,7 @@ public class MySQLSelectParser extends AbstractSelectParser {
         if (!getSqlParser().skipIfEqual(MySQLKeyword.LIMIT)) {
             return;
         }
-        //
+        // 解析 第一个 位置
         int valueIndex = -1;
         int valueBeginPosition = getSqlParser().getLexer().getCurrentToken().getEndPosition();
         int value;
@@ -122,17 +122,18 @@ public class MySQLSelectParser extends AbstractSelectParser {
         } else {
             throw new SQLParsingException(getSqlParser().getLexer());
         }
-        // LIMIT offset, row_count
+        // 第二种情况：LIMIT offset, row_count
         getSqlParser().getLexer().nextToken();
         if (getSqlParser().skipIfEqual(Symbol.COMMA)) {
             getSelectStatement().setLimit(getLimitWithComma(valueIndex, valueBeginPosition, value, isParameterForValue));
             return;
         }
-        // LIMIT row_count, offset
+        // 第三种情况：LIMIT row_count, offset
         if (getSqlParser().skipIfEqual(MySQLKeyword.OFFSET)) {
             getSelectStatement().setLimit(getLimitWithOffset(valueIndex, valueBeginPosition, value, isParameterForValue));
             return;
         }
+        // 第一种情况：LIMIT row_count
         //
         if (!isParameterForValue) {
             getSelectStatement().getSqlTokens().add(new RowCountToken(valueBeginPosition, value));
