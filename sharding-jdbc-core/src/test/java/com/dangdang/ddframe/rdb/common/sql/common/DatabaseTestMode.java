@@ -15,7 +15,7 @@
  * </p>
  */
 
-package com.dangdang.ddframe.rdb.common.sql;
+package com.dangdang.ddframe.rdb.common.sql.common;
 
 import com.dangdang.ddframe.rdb.sharding.constant.DatabaseType;
 import com.google.common.collect.Lists;
@@ -37,6 +37,8 @@ public enum DatabaseTestMode {
         } else if (Local == this) {
             result.add(MySQL);
 //            result.add(PostgreSQL);
+//            result.add(Oracle);
+//            result.add(SQLServer);
         } else if (Test == this) {
             result.add(H2);
         }

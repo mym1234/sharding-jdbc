@@ -138,15 +138,13 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         sqlParser.skipIfEqual(DefaultKeyword.CONNECT_BY_ROOT); // Oracle 独有：https://docs.oracle.com/cd/B19306_01/server.102/b14200/operators004.htm
         String literals = sqlParser.getLexer().getCurrentToken().getLiterals();
         // 第一种情况，* 通用选择项，SELECT *
-        if (sqlParser.equalAny(Symbol.STAR) || Symbol.STAR.getLiterals().equals(SQLUtil.getExactlyValue(literals))) {
-            sqlParser.getLexer().nextToken();
-            selectStatement.getItems().add(new CommonSelectItem(Symbol.STAR.getLiterals(), sqlParser.parseAlias()));
-            selectStatement.setContainStar(true);
+        if (isStarSelectItem(literals)) {
+            selectStatement.getItems().add(parseStarSelectItem());
             return;
         }
         // 第二种情况，聚合选择项
-        if (sqlParser.skipIfEqual(DefaultKeyword.MAX, DefaultKeyword.MIN, DefaultKeyword.SUM, DefaultKeyword.AVG, DefaultKeyword.COUNT)) {
-            selectStatement.getItems().add(new AggregationSelectItem(AggregationType.valueOf(literals.toUpperCase()), sqlParser.skipParentheses(), sqlParser.parseAlias()));
+        if (isAggregationSelectItem()) {
+            selectStatement.getItems().add(parseAggregationSelectItem(literals));
             return;
         }
         // 第三种情况，非 * 通用选择项
@@ -163,11 +161,8 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
             }
         }
         // 不带 AS，并且有别名，并且别名不等于自己（tips：这里重点看。判断这么复杂的原因：防止substring操作截取结果错误）
-        if (null != lastToken && Literals.IDENTIFIER == lastToken.getType()
-                && !isSQLPropertyExpression(expression, lastToken) // 过滤掉，别名是自己的情况【1】（例如，SELECT u.user_id u.user_id FROM t_user）
-                && !expression.toString().equals(lastToken.getLiterals())) { // 过滤掉，无别名的情况【2】（例如，SELECT user_id FROM t_user）
-            selectStatement.getItems().add(
-                    new CommonSelectItem(SQLUtil.getExactlyValue(expression.substring(0, expression.lastIndexOf(lastToken.getLiterals()))), Optional.of(lastToken.getLiterals())));
+        if (hasAlias(expression, lastToken)) {
+            selectStatement.getItems().add(parseSelectItemWithAlias(expression, lastToken));
             return;
         }
         // 带 AS（例如，SELECT user_id AS userId） 或者 无别名（例如，SELECT user_id）
@@ -182,6 +177,30 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         throw new UnsupportedOperationException("Cannot support special select item.");
     }
 
+    private boolean isStarSelectItem(final String literals) {
+        return sqlParser.equalAny(Symbol.STAR) || Symbol.STAR.getLiterals().equals(SQLUtil.getExactlyValue(literals));
+    }
+
+    private SelectItem parseStarSelectItem() {
+        sqlParser.getLexer().nextToken();
+        selectStatement.setContainStar(true);
+        return new CommonSelectItem(Symbol.STAR.getLiterals(), sqlParser.parseAlias());
+    }
+
+    private boolean isAggregationSelectItem() {
+        return sqlParser.skipIfEqual(DefaultKeyword.MAX, DefaultKeyword.MIN, DefaultKeyword.SUM, DefaultKeyword.AVG, DefaultKeyword.COUNT);
+    }
+
+    private SelectItem parseAggregationSelectItem(final String literals) {
+        return new AggregationSelectItem(AggregationType.valueOf(literals.toUpperCase()), sqlParser.skipParentheses(), sqlParser.parseAlias());
+    }
+
+    private boolean hasAlias(final StringBuilder expression, final Token lastToken) {
+        return null != lastToken && Literals.IDENTIFIER == lastToken.getType()
+                && !isSQLPropertyExpression(expression, lastToken) // 过滤掉，别名是自己的情况【1】（例如，SELECT u.user_id u.user_id FROM t_user）
+                && !expression.toString().equals(lastToken.getLiterals()); // 过滤掉，无别名的情况【2】（例如，SELECT user_id FROM t_user）
+    }
+
     /**
      * 是否 表达式 以 "." + lastToken 结尾。
      * 目前用于判断：SELECT u.user_id u.user_id FROM t_user 情况
@@ -194,6 +213,10 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         return expression.toString().endsWith(Symbol.DOT.getLiterals() + lastToken.getLiterals());
     }
     
+    private CommonSelectItem parseSelectItemWithAlias(final StringBuilder expression, final Token lastToken) {
+        return new CommonSelectItem(SQLUtil.getExactlyValue(expression.substring(0, expression.lastIndexOf(lastToken.getLiterals()))), Optional.of(lastToken.getLiterals()));
+    }
+
     protected void queryRest() {
         if (sqlParser.equalAny(DefaultKeyword.UNION, DefaultKeyword.EXCEPT, DefaultKeyword.INTERSECT, DefaultKeyword.MINUS)) {
             throw new SQLParsingUnsupportedException(sqlParser.getLexer().getCurrentToken().getType());

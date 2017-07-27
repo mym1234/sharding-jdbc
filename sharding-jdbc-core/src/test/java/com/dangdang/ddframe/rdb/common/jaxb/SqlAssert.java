@@ -40,6 +40,6 @@ public final class SqlAssert {
     @XmlAttribute(name = "type")
     private String types;
     
-    @XmlElement
-    private List<SqlAssertData> data;
+    @XmlElement(name = "sharding-rule")
+    private List<SqlShardingRule> sqlShardingRules;
 }

@@ -90,9 +90,7 @@ public final class ParsingSQLRouter implements SQLRouter {
         SQLRewriteEngine rewriteEngine = new SQLRewriteEngine(shardingRule, logicSQL, sqlStatement);
         boolean isSingleRouting = routingResult.isSingleRouting();
         if (sqlStatement instanceof SelectStatement && null != ((SelectStatement) sqlStatement).getLimit()) {
-            SelectStatement selectStatement = (SelectStatement) sqlStatement;
-            boolean isNeedFetchAll = (!selectStatement.getGroupByItems().isEmpty() || !selectStatement.getAggregationSelectItems().isEmpty()) && !selectStatement.isSameGroupByAndOrderByItems();
-            selectStatement.getLimit().processParameters(parameters, !isSingleRouting, isNeedFetchAll);
+            processLimit(parameters, (SelectStatement) sqlStatement, isSingleRouting);
         }
         SQLBuilder sqlBuilder = rewriteEngine.rewrite(!isSingleRouting);
         if (routingResult instanceof CartesianRoutingResult) {
@@ -108,7 +106,7 @@ public final class ParsingSQLRouter implements SQLRouter {
         }
         MetricsContext.stop(context);
         if (showSQL) {
-            logSQL(logicSQL, sqlStatement, result.getExecutionUnits(), parameters);
+            SQLLogger.logSQL(logicSQL, sqlStatement, result.getExecutionUnits(), parameters);
         }
         return result;
     }
@@ -123,18 +121,6 @@ public final class ParsingSQLRouter implements SQLRouter {
             routingEngine = new ComplexRoutingEngine(shardingRule, parameters, tableNames, sqlStatement);
         }
         return routingEngine.route();
-    }
-    
-    private void logSQL(final String logicSQL, final SQLStatement sqlStatement, final Collection<SQLExecutionUnit> sqlExecutionUnits, final List<Object> parameters) {
-        SQLLogger.log("Logic SQL: {}", logicSQL);
-        SQLLogger.log("SQLStatement: {}", sqlStatement);
-        for (SQLExecutionUnit each : sqlExecutionUnits) {
-            if (parameters.isEmpty()) {
-                SQLLogger.log("Actual SQL: {} ::: {}", each.getDataSource(), each.getSql());
-            } else {
-                SQLLogger.log("Actual SQL: {} ::: {} ::: {}", each.getDataSource(), each.getSql(), parameters);
-            }
-        }
     }
     
     private void processGeneratedKey(final List<Object> parameters, final InsertStatement insertStatement, final SQLRouteResult sqlRouteResult) {
@@ -154,5 +140,10 @@ public final class ParsingSQLRouter implements SQLRouter {
         generatedKeys.add(generatedKey);
         sqlRouteResult.getGeneratedKeys().clear();
         sqlRouteResult.getGeneratedKeys().addAll(generatedKeys);
+    }
+    
+    private void processLimit(final List<Object> parameters, final SelectStatement selectStatement, final boolean isSingleRouting) {
+        boolean isNeedFetchAll = (!selectStatement.getGroupByItems().isEmpty() || !selectStatement.getAggregationSelectItems().isEmpty()) && !selectStatement.isSameGroupByAndOrderByItems();
+        selectStatement.getLimit().processParameters(parameters, !isSingleRouting, isNeedFetchAll);
     }
 }
