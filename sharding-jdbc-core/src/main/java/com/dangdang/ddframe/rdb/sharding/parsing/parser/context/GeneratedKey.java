@@ -30,10 +30,17 @@ import lombok.ToString;
 @Getter
 @ToString
 public final class GeneratedKey {
-    
+
+    /**
+     * 字段
+     */
     private final String column;
-    
+    /**
+     * 第几个占位符
+     */
     private final int index;
-    
+    /**
+     * 值
+     */
     private final Number value;
 }

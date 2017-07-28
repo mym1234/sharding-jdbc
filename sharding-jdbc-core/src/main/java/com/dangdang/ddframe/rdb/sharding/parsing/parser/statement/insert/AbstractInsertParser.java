@@ -59,7 +59,10 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
     private final ShardingRule shardingRule;
     
     private final InsertStatement insertStatement;
-    
+    /**
+     * 自动生成键是第几个插入字段
+     * index 从 0 开始
+     */
     @Getter(AccessLevel.NONE)
     private int generateKeyColumnIndex = -1;
     
@@ -68,30 +71,67 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
         this.shardingRule = shardingRule;
         insertStatement = new InsertStatement();
     }
-    
+
+
+// https://dev.mysql.com/doc/refman/5.7/en/insert.html
+
+// 第一种
+//    INSERT [LOW_PRIORITY | DELAYED | HIGH_PRIORITY] [IGNORE]
+//            [INTO] tbl_name
+//    [PARTITION (partition_name,...)]
+//            [(col_name,...)]
+//    {VALUES | VALUE} ({expr | DEFAULT},...),(...),...
+//            [ ON DUPLICATE KEY UPDATE
+//    col_name=expr
+//        [, col_name=expr] ... ]
+
+// 第二种
+//    INSERT [LOW_PRIORITY | DELAYED | HIGH_PRIORITY] [IGNORE]
+//            [INTO] tbl_name
+//    [PARTITION (partition_name,...)]
+//    SET col_name={expr | DEFAULT}, ...
+//            [ ON DUPLICATE KEY UPDATE
+//    col_name=expr
+//        [, col_name=expr] ... ]
+
+// 第三种
+//    INSERT [LOW_PRIORITY | HIGH_PRIORITY] [IGNORE]
+//            [INTO] tbl_name
+//    [PARTITION (partition_name,...)]
+//            [(col_name,...)]
+//    SELECT ...
+//            [ ON DUPLICATE KEY UPDATE
+//    col_name=expr
+//        [, col_name=expr] ... ]
+
     @Override
     public final InsertStatement parse() {
-        sqlParser.getLexer().nextToken();
-        parseInto();
-        parseColumns();
+        sqlParser.getLexer().nextToken(); // 跳过 INSERT 关键字
+        parseInto(); // 解析表
+        parseColumns(); // 解析字段
         if (sqlParser.equalAny(DefaultKeyword.SELECT, Symbol.LEFT_PAREN)) {
             throw new UnsupportedOperationException("Cannot support subquery");
         }
-        if (getValuesKeywords().contains(sqlParser.getLexer().getCurrentToken().getType())) {
+        if (getValuesKeywords().contains(sqlParser.getLexer().getCurrentToken().getType())) { // 第一种插入SQL情况
             parseValues();
-        } else if (getCustomizedInsertKeywords().contains(sqlParser.getLexer().getCurrentToken().getType())) {
+        } else if (getCustomizedInsertKeywords().contains(sqlParser.getLexer().getCurrentToken().getType())) { // 第二种插入SQL情况
             parseCustomizedInsert();
         }
-        appendGenerateKey();
+        appendGenerateKey(); // 自增主键
         return insertStatement;
     }
-    
+
+    /**
+     * 解析表
+     */
     private void parseInto() {
+        // 例如，Oracle，INSERT FIRST/ALL 目前不支持
         if (getUnsupportedKeywords().contains(sqlParser.getLexer().getCurrentToken().getType())) {
             throw new SQLParsingUnsupportedException(sqlParser.getLexer().getCurrentToken().getType());
         }
         sqlParser.skipUntil(DefaultKeyword.INTO);
         sqlParser.getLexer().nextToken();
+        // 解析表
         sqlParser.parseSingleTable(insertStatement);
         skipBetweenTableAndValues();
     }
@@ -99,7 +139,11 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
     protected Set<TokenType> getUnsupportedKeywords() {
         return Collections.emptySet();
     }
-    
+
+    /**
+     * 跳过 表 和 插入字段 中间的 Token
+     * 例如 MySQL ：[PARTITION (partition_name,...)]
+     */
     private void skipBetweenTableAndValues() {
         while (getSkippedKeywordsBetweenTableAndValues().contains(sqlParser.getLexer().getCurrentToken().getType())) {
             sqlParser.getLexer().nextToken();
@@ -112,24 +156,31 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
     protected Set<TokenType> getSkippedKeywordsBetweenTableAndValues() {
         return Collections.emptySet();
     }
-    
+
+    /**
+     * 解析插入字段
+     */
     private void parseColumns() {
         Collection<Column> result = new LinkedList<>();
         if (sqlParser.equalAny(Symbol.LEFT_PAREN)) {
             String tableName = insertStatement.getTables().getSingleTableName();
-            Optional<String> generateKeyColumn = shardingRule.getGenerateKeyColumn(tableName);
+            Optional<String> generateKeyColumn = shardingRule.getGenerateKeyColumn(tableName); // 自动生成键信息
             int count = 0;
             do {
+                // Column 插入字段
                 sqlParser.getLexer().nextToken();
                 String columnName = SQLUtil.getExactlyValue(sqlParser.getLexer().getCurrentToken().getLiterals());
                 result.add(new Column(columnName, tableName));
                 sqlParser.getLexer().nextToken();
+                // 自动生成键
                 if (generateKeyColumn.isPresent() && generateKeyColumn.get().equalsIgnoreCase(columnName)) {
                     generateKeyColumnIndex = count;
                 }
                 count++;
             } while (!sqlParser.equalAny(Symbol.RIGHT_PAREN) && !sqlParser.equalAny(Assist.END));
+            //
             insertStatement.setColumnsListLastPosition(sqlParser.getLexer().getCurrentToken().getEndPosition() - sqlParser.getLexer().getCurrentToken().getLiterals().length());
+            //
             sqlParser.getLexer().nextToken();
         }
         insertStatement.getColumns().addAll(result);
@@ -138,25 +189,31 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
     protected Set<TokenType> getValuesKeywords() {
         return Sets.<TokenType>newHashSet(DefaultKeyword.VALUES);
     }
-    
+
+    /**
+     * 解析值字段
+     */
     private void parseValues() {
         boolean parsed = false;
         do {
-            if (parsed) {
+            if (parsed) { // 只允许INSERT INTO 一条
                 throw new UnsupportedOperationException("Cannot support multiple insert");
             }
             sqlParser.getLexer().nextToken();
             sqlParser.accept(Symbol.LEFT_PAREN);
+            // 解析表达式
             List<SQLExpression> sqlExpressions = new LinkedList<>();
             do {
                 sqlExpressions.add(sqlParser.parseExpression());
             } while (sqlParser.skipIfEqual(Symbol.COMMA));
+            //
             insertStatement.setValuesListLastPosition(sqlParser.getLexer().getCurrentToken().getEndPosition() - sqlParser.getLexer().getCurrentToken().getLiterals().length());
+            // 解析值字段
             int count = 0;
             for (Column each : insertStatement.getColumns()) {
                 SQLExpression sqlExpression = sqlExpressions.get(count);
                 insertStatement.getConditions().add(new Condition(each, sqlExpression), shardingRule);
-                if (generateKeyColumnIndex == count) {
+                if (generateKeyColumnIndex == count) { // 自动生成键
                     insertStatement.setGeneratedKey(createGeneratedKey(each, sqlExpression));
                 }
                 count++;
@@ -164,14 +221,21 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
             sqlParser.accept(Symbol.RIGHT_PAREN);
             parsed = true;
         }
-        while (sqlParser.equalAny(Symbol.COMMA));
+        while (sqlParser.equalAny(Symbol.COMMA)); // 字段以 "," 分隔
     }
-    
+
+    /**
+     * 创建 自动生成键
+     *
+     * @param column 字段
+     * @param sqlExpression 表达式
+     * @return 自动生成键
+     */
     private GeneratedKey createGeneratedKey(final Column column, final SQLExpression sqlExpression) {
         GeneratedKey result;
-        if (sqlExpression instanceof SQLPlaceholderExpression) {
+        if (sqlExpression instanceof SQLPlaceholderExpression) { // 占位符
             result = new GeneratedKey(column.getName(), ((SQLPlaceholderExpression) sqlExpression).getIndex(), null);
-        } else if (sqlExpression instanceof SQLNumberExpression) {
+        } else if (sqlExpression instanceof SQLNumberExpression) { // 数字
             result = new GeneratedKey(column.getName(), -1, ((SQLNumberExpression) sqlExpression).getNumber());
         } else {
             throw new ShardingJdbcException("Generated key only support number.");
@@ -185,16 +249,22 @@ public abstract class AbstractInsertParser implements SQLStatementParser {
     
     protected void parseCustomizedInsert() {
     }
-    
+
+    /**
+     * 当表设置自动生成键，并且插入SQL没写自增字段，增加该字段
+     */
     private void appendGenerateKey() {
+        // 当表设置自动生成键，并且插入SQL没写自增字段
         String tableName = insertStatement.getTables().getSingleTableName();
         Optional<String> generateKeyColumn = shardingRule.getGenerateKeyColumn(tableName);
         if (!generateKeyColumn.isPresent() || null != insertStatement.getGeneratedKey()) {
             return;
-        } 
+        }
+        // ItemsToken
         ItemsToken columnsToken = new ItemsToken(insertStatement.getColumnsListLastPosition());
         columnsToken.getItems().add(generateKeyColumn.get());
         insertStatement.getSqlTokens().add(columnsToken);
+        // GeneratedKeyToken
         insertStatement.getSqlTokens().add(new GeneratedKeyToken(insertStatement.getValuesListLastPosition()));
     }
 }

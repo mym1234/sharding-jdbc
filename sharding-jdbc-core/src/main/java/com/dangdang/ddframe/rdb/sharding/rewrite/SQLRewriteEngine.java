@@ -49,11 +49,17 @@ import java.util.Map;
 public final class SQLRewriteEngine {
     
     private final ShardingRule shardingRule;
-    
+    /**
+     * 原始SQL
+     */
     private final String originalSQL;
-    
+    /**
+     * SQL标记对象
+     */
     private final List<SQLToken> sqlTokens = new LinkedList<>();
-    
+    /**
+     * SQL 语句解析结果对象
+     */
     private final SQLStatement sqlStatement;
     
     public SQLRewriteEngine(final ShardingRule shardingRule, final String originalSQL, final SQLStatement sqlStatement) {

@@ -53,13 +53,22 @@ public final class MySQLInsertParser extends AbstractInsertParser {
     protected void parseCustomizedInsert() {
         parseInsertSet();
     }
-    
+
+    /**
+     * 解析第二种插入SQL：INSERT SET
+     * 例如：
+     *  INSERT INTO test SET id = 4  ON DUPLICATE KEY UPDATE name = 'doubi', name = 'hehe';
+     *  INSERT INTO test SET id = 4, name = 'hehe';
+     */
     private void parseInsertSet() {
         do {
             getSqlParser().getLexer().nextToken();
+            // 插入字段
             Column column = new Column(SQLUtil.getExactlyValue(getSqlParser().getLexer().getCurrentToken().getLiterals()), getInsertStatement().getTables().getSingleTableName());
             getSqlParser().getLexer().nextToken();
+            // 等号
             getSqlParser().accept(Symbol.EQ);
+            // 【值】表达式
             SQLExpression sqlExpression;
             if (getSqlParser().equalAny(Literals.INT)) {
                 sqlExpression = new SQLNumberExpression(Integer.parseInt(getSqlParser().getLexer().getCurrentToken().getLiterals()));
@@ -76,12 +85,13 @@ public final class MySQLInsertParser extends AbstractInsertParser {
                 throw new UnsupportedOperationException("");
             }
             getSqlParser().getLexer().nextToken();
+            // Condition
             if (getSqlParser().equalAny(Symbol.COMMA, DefaultKeyword.ON, Assist.END)) {
                 getInsertStatement().getConditions().add(new Condition(column, sqlExpression), getShardingRule());
             } else {
                 getSqlParser().skipUntil(Symbol.COMMA, DefaultKeyword.ON);
             }
-        } while (getSqlParser().equalAny(Symbol.COMMA));
+        } while (getSqlParser().equalAny(Symbol.COMMA)); // 字段以 "," 分隔
     }
     
     @Override

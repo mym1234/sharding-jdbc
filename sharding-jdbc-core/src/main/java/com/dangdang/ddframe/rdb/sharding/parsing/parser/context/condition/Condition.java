@@ -30,7 +30,10 @@ import java.util.Map.Entry;
 @EqualsAndHashCode
 @ToString
 public final class Condition {
-    
+
+    /**
+     * 字段
+     */
     @Getter
     private final Column column;
     

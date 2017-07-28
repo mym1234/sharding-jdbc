@@ -46,13 +46,22 @@ import java.util.LinkedList;
 @Setter
 @ToString
 public final class InsertStatement extends AbstractSQLStatement {
-    
+
+    /**
+     * 插入字段
+     */
     private final Collection<Column> columns = new LinkedList<>();
-    
+    /**
+     * 自动生成键
+     */
     private GeneratedKey generatedKey;
-    
+    /**
+     * 插入字段 下一个Token 开始位置
+     */
     private int columnsListLastPosition;
-    
+    /**
+     * 值字段 下一个Token 开始位置
+     */
     private int valuesListLastPosition;
     
     public InsertStatement() {

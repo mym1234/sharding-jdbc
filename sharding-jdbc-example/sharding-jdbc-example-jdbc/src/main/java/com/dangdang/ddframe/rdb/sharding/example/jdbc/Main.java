@@ -114,10 +114,16 @@ public final class Main {
 //        String sql = "SELECT COUNT(user_id) FROM t_user";
         // f
 //        String sql = "SELECT o.id FROM t_order o";
-//        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id;";
+        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id;";
 //        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id;";
 //        String sql = "SELECT order_id FROM t_order ORDER BY order_id";
-        String sql = "SELECT order_id FROM t_order o ORDER BY o.order_id";
+//        String sql = "SELECT order_id FROM t_order o ORDER BY o.order_id";
+//        String sql = "INSERT INTO t_order (order_id, uid, nickname) VALUES (?, ?, ?)";
+//        String sql = "INSERT INTO t_order (uid, nickname) VALUES (?, ?)";
+//        String sql = "INSERT INTO test SET id = 4  ON DUPLICATE KEY UPDATE name = 'doubi', name = 'hehe'";
+//        String sql = "UPDATE t_user SET nickname = ?, age = ? WHERE user_id = ?";
+//        String sql = "DELETE IGNORE FROM t_user\n" +
+//                "WHERE user_id = ?";
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
@@ -169,6 +175,7 @@ public final class Main {
 //        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order_0", "t_order_1"))
         TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order"))
                 .dataSourceRule(dataSourceRule)
+                .generateKeyColumn("order_id")
 //                .dataSourceRule(new DataSourceRule(createDataSourceMap01()))
 //                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
                 .build();
