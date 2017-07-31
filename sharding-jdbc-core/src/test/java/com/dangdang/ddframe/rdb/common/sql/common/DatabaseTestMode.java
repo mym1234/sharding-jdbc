@@ -28,18 +28,15 @@ import static com.dangdang.ddframe.rdb.sharding.constant.DatabaseType.MySQL;
 
 public enum DatabaseTestMode {
     
-    All, Local, Test;
+    ALL, LOCAL, TEST;
     
     public List<DatabaseType> databaseTypes() {
         List<DatabaseType> result = new ArrayList<>();
-        if (All == this) {
+        if (ALL == this) {
             return Lists.newArrayList(DatabaseType.values());
-        } else if (Local == this) {
+        } else if (LOCAL == this) {
             result.add(MySQL);
-//            result.add(PostgreSQL);
-//            result.add(Oracle);
-//            result.add(SQLServer);
-        } else if (Test == this) {
+        } else if (TEST == this) {
             result.add(H2);
         }
         return result;
