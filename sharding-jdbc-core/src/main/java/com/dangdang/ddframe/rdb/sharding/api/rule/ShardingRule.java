@@ -46,30 +46,45 @@ import java.util.Map;
  */
 @Getter
 public final class ShardingRule {
-    
+
+    /**
+     * 数据源配置对象
+     */
     private final DataSourceRule dataSourceRule;
-    
+    /**
+     * 表规则配置对象
+     */
     private final Collection<TableRule> tableRules;
-    
+    /**
+     * 绑定表配置规则
+     */
     private final Collection<BindingTableRule> bindingTableRules;
-    
+    /**
+     * 默认分库策略
+     */
     private final DatabaseShardingStrategy databaseShardingStrategy;
-    
+    /**
+     * 默认分表策略
+     */
     private final TableShardingStrategy tableShardingStrategy;
-    
+    /**
+     * 默认主键生成器
+     */
     @Getter(AccessLevel.NONE)
     private final KeyGenerator keyGenerator;
-    
+    /**
+     * DefaultKeyGenerator 主键生成器
+     */
     @Getter(AccessLevel.NONE)
     private final KeyGenerator defaultGenerator;
-    
+
     /**
      * 全属性构造器.
-     * 
+     *
      * <p>用于Spring非命名空间的配置.</p>
-     * 
+     *
      * <p>未来将改为private权限, 不在对外公开, 不建议使用非Spring命名空间的配置.</p>
-     * 
+     *
      * @deprecated 未来将改为private权限, 不在对外公开, 不建议使用非Spring命名空间的配置.
      * @param dataSourceRule 数据源配置规则
      * @param tableRules 表配置规则
@@ -80,7 +95,7 @@ public final class ShardingRule {
      */
     @Deprecated
     public ShardingRule(
-            final DataSourceRule dataSourceRule, final Collection<TableRule> tableRules, final Collection<BindingTableRule> bindingTableRules, 
+            final DataSourceRule dataSourceRule, final Collection<TableRule> tableRules, final Collection<BindingTableRule> bindingTableRules,
             final DatabaseShardingStrategy databaseShardingStrategy, final TableShardingStrategy tableShardingStrategy, final KeyGenerator keyGenerator) {
         Preconditions.checkNotNull(dataSourceRule);
         this.dataSourceRule = dataSourceRule;
@@ -93,7 +108,7 @@ public final class ShardingRule {
         this.keyGenerator = keyGenerator;
         defaultGenerator = KeyGeneratorFactory.createKeyGenerator(DefaultKeyGenerator.class);
     }
-    
+
     /**
      * 获取表规则配置对象构建器.
      *
@@ -102,10 +117,10 @@ public final class ShardingRule {
     public static ShardingRuleBuilder builder() {
         return new ShardingRuleBuilder();
     }
-    
+
     /**
      * 试着根据逻辑表名称查找分片规则.
-     * 
+     *
      * @param logicTableName 逻辑表名称
      * @return 该逻辑表的分片规则
      */
@@ -117,7 +132,7 @@ public final class ShardingRule {
         }
         return Optional.absent();
     }
-    
+
     /**
      * 根据逻辑表名称查找分片规则.
      *
@@ -134,7 +149,7 @@ public final class ShardingRule {
         }
         throw new ShardingJdbcException("Cannot find table rule and default data source with logic table: '%s'", logicTableName);
     }
-    
+
     private TableRule createTableRuleWithDefaultDataSource(final String logicTableName, final DataSourceRule defaultDataSourceRule) {
         Map<String, DataSource> defaultDataSourceMap = new HashMap<>(1);
         defaultDataSourceMap.put(defaultDataSourceRule.getDefaultDataSourceName(), defaultDataSourceRule.getDefaultDataSource().get());
@@ -143,35 +158,35 @@ public final class ShardingRule {
                 .databaseShardingStrategy(new DatabaseShardingStrategy("", new NoneDatabaseShardingAlgorithm()))
                 .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm())).build();
     }
-    
+
     /**
      * 获取数据库分片策略.
-     * 
+     *
      * <p>
      * 根据表规则配置对象获取分片策略, 如果获取不到则获取默认分片策略.
      * </p>
-     * 
+     *
      * @param tableRule 表规则配置对象
      * @return 数据库分片策略
      */
     public DatabaseShardingStrategy getDatabaseShardingStrategy(final TableRule tableRule) {
         return null == tableRule.getDatabaseShardingStrategy() ? databaseShardingStrategy : tableRule.getDatabaseShardingStrategy();
     }
-    
+
     /**
      * 获取表分片策略.
-     * 
+     *
      * <p>
      * 根据表规则配置对象获取分片策略, 如果获取不到则获取默认分片策略.
      * </p>
-     * 
+     *
      * @param tableRule 表规则配置对象
      * @return 表分片策略
      */
     public TableShardingStrategy getTableShardingStrategy(final TableRule tableRule) {
         return null == tableRule.getTableShardingStrategy() ? tableShardingStrategy : tableRule.getTableShardingStrategy();
     }
-    
+
     /**
      * 判断逻辑表名称集合是否全部属于Binding表.
      *
@@ -182,10 +197,10 @@ public final class ShardingRule {
         Collection<String> bindingTables = filterAllBindingTables(logicTables);
         return !bindingTables.isEmpty() && bindingTables.containsAll(logicTables);
     }
-    
+
     /**
      * 过滤出所有的Binding表名称.
-     * 
+     *
      * @param logicTables 逻辑表名称集合
      * @return 所有的Binding表名称集合
      */
@@ -201,7 +216,7 @@ public final class ShardingRule {
         result.retainAll(logicTables);
         return result;
     }
-    
+
     private Optional<BindingTableRule> findBindingTableRule(final Collection<String> logicTables) {
         for (String each : logicTables) {
             Optional<BindingTableRule> result = findBindingTableRule(each);
@@ -211,7 +226,7 @@ public final class ShardingRule {
         }
         return Optional.absent();
     }
-    
+
     /**
      * 根据逻辑表名称获取binding表配置的逻辑表名称集合.
      *
@@ -226,7 +241,7 @@ public final class ShardingRule {
         }
         return Optional.absent();
     }
-    
+
     /**
      * 判断是否为分片列.
      *
@@ -250,10 +265,10 @@ public final class ShardingRule {
         }
         return false;
     }
-    
+
     /**
      * 获取自增列名称.
-     * 
+     *
      * @param tableName 表名称
      * @return 自增列名称
      */
@@ -265,7 +280,7 @@ public final class ShardingRule {
         }
         return Optional.absent();
     }
-    
+
     /**
      * 获取自增主键.
      *
@@ -285,25 +300,38 @@ public final class ShardingRule {
         }
         return defaultGenerator.generateKey();
     }
-    
+
     /**
      * 分片规则配置对象构建器.
      */
     @RequiredArgsConstructor
     public static class ShardingRuleBuilder {
-        
+
+        /**
+         * 数据源配置对象
+         */
         private DataSourceRule dataSourceRule;
-        
+        /**
+         * 表规则配置对象
+         */
         private Collection<TableRule> tableRules;
-        
+        /**
+         * 绑定表配置规则
+         */
         private Collection<BindingTableRule> bindingTableRules;
-        
+        /**
+         * 默认分库策略
+         */
         private DatabaseShardingStrategy databaseShardingStrategy;
-        
+        /**
+         * 默认分表策略
+         */
         private TableShardingStrategy tableShardingStrategy;
-        
+        /**
+         * 默认主键生成器对应的类
+         */
         private Class<? extends KeyGenerator> keyGeneratorClass;
-        
+
         /**
          * 构建数据源配置规则.
          *
@@ -314,7 +342,7 @@ public final class ShardingRule {
             this.dataSourceRule = dataSourceRule;
             return this;
         }
-        
+
         /**
          * 构建表配置规则.
          *
@@ -325,7 +353,7 @@ public final class ShardingRule {
             this.tableRules = tableRules;
             return this;
         }
-        
+
         /**
          * 构建绑定表配置规则.
          *
@@ -336,7 +364,7 @@ public final class ShardingRule {
             this.bindingTableRules = bindingTableRules;
             return this;
         }
-        
+
         /**
          * 构建默认分库策略.
          *
@@ -347,7 +375,7 @@ public final class ShardingRule {
             this.databaseShardingStrategy = databaseShardingStrategy;
             return this;
         }
-        
+
         /**
          * 构建数据源分片规则.
          *
@@ -358,10 +386,10 @@ public final class ShardingRule {
             this.tableShardingStrategy = tableShardingStrategy;
             return this;
         }
-    
+
         /**
          * 构建默认主键生成器.
-         * 
+         *
          * @param keyGeneratorClass 默认主键生成器
          * @return 分片规则配置对象构建器
          */
@@ -369,7 +397,7 @@ public final class ShardingRule {
             this.keyGeneratorClass = keyGeneratorClass;
             return this;
         }
-        
+
         /**
          * 构建分片规则配置对象.
          *

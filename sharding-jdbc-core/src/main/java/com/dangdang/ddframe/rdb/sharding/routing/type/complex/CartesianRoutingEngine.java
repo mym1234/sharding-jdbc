@@ -51,14 +51,18 @@ public final class CartesianRoutingEngine implements RoutingEngine {
     public CartesianRoutingResult route() {
         CartesianRoutingResult result = new CartesianRoutingResult();
         for (Entry<String, Set<String>> entry : getDataSourceLogicTablesMap().entrySet()) {
+            // TODO 数据源、Set<逻辑表>、List<Set<物理表>>
             List<Set<String>> actualTableGroups = getActualTableGroups(entry.getKey(), entry.getValue());
+            // TODO TableUnit
             List<Set<TableUnit>> tableUnitGroups = toTableUnitGroups(entry.getKey(), actualTableGroups);
+            // TODO
             result.merge(entry.getKey(), getCartesianTableReferences(Sets.cartesianProduct(tableUnitGroups)));
         }
         log.trace("cartesian tables sharding result: {}", result);
         return result;
     }
-    
+
+    // TODO 芋艿：<数据源，Set<逻辑表名>>
     private Map<String, Set<String>> getDataSourceLogicTablesMap() {
         Collection<String> intersectionDataSources = getIntersectionDataSources();
         Map<String, Set<String>> result = new HashMap<>(routingResults.size());
@@ -80,7 +84,7 @@ public final class CartesianRoutingEngine implements RoutingEngine {
             if (result.isEmpty()) {
                 result.addAll(each.getTableUnits().getDataSourceNames());
             }
-            result.retainAll(each.getTableUnits().getDataSourceNames());
+            result.retainAll(each.getTableUnits().getDataSourceNames()); // TODO 芋艿：保留交集
         }
         return result;
     }

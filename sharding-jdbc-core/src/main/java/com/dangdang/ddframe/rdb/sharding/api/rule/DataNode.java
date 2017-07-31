@@ -37,9 +37,14 @@ import java.util.List;
 public class DataNode {
     
     private static final String DELIMITER = ".";
-    
+
+    /**
+     * 数据源名
+     */
     private final String dataSourceName;
-    
+    /**
+     * 真实表
+     */
     private final String tableName;
     
     public DataNode(final String dataNode) {

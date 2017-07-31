@@ -18,15 +18,16 @@
 package com.dangdang.ddframe.rdb.sharding.example.jdbc;
 
 import com.dangdang.ddframe.rdb.sharding.api.HintManager;
-import com.dangdang.ddframe.rdb.sharding.api.rule.BindingTableRule;
+import com.dangdang.ddframe.rdb.sharding.api.ShardingValue;
 import com.dangdang.ddframe.rdb.sharding.api.rule.DataSourceRule;
 import com.dangdang.ddframe.rdb.sharding.api.rule.ShardingRule;
 import com.dangdang.ddframe.rdb.sharding.api.rule.TableRule;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.database.DatabaseShardingStrategy;
+import com.dangdang.ddframe.rdb.sharding.api.strategy.database.SingleKeyDatabaseShardingAlgorithm;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.table.TableShardingStrategy;
-import com.dangdang.ddframe.rdb.sharding.example.jdbc.algorithm.ModuloDatabaseShardingAlgorithm;
 import com.dangdang.ddframe.rdb.sharding.example.jdbc.algorithm.ModuloTableShardingAlgorithm;
 import com.dangdang.ddframe.rdb.sharding.jdbc.core.datasource.ShardingDataSource;
+import com.google.common.collect.Range;
 import org.apache.commons.dbcp.BasicDataSource;
 
 import javax.sql.DataSource;
@@ -34,10 +35,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @SuppressWarnings("Duplicates")
 public final class Main {
@@ -114,7 +112,8 @@ public final class Main {
 //        String sql = "SELECT COUNT(user_id) FROM t_user";
         // f
 //        String sql = "SELECT o.id FROM t_order o";
-        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id;";
+//        String sql = "SELECT o3.* FROM (SELECT * FROM (SELECT * FROM t_order o) o2) o3 JOIN t_order_item i ON o3.order_id = i.order_id;";
+        String sql = "SELECT o.* FROM t_order o JOIN t_order_item i ON o.order_id = i.order_id;";
 //        String sql = "SELECT o3.* FROM t_order_item i JOIN (SELECT * FROM (SELECT * FROM t_order o) o2) o3 ON o3.order_id = i.order_id;";
 //        String sql = "SELECT order_id FROM t_order ORDER BY order_id";
 //        String sql = "SELECT order_id FROM t_order o ORDER BY o.order_id";
@@ -170,6 +169,32 @@ public final class Main {
         }
     }
 
+//    private static ShardingDataSource getShardingDataSource() {
+//        DataSourceRule dataSourceRule = new DataSourceRule(createDataSourceMap());
+////        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order_0", "t_order_1"))
+//        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order"))
+//                .dataSourceRule(dataSourceRule)
+//                .generateKeyColumn("order_id")
+////                .dataSourceRule(new DataSourceRule(createDataSourceMap01()))
+////                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
+//                .build();
+////        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1")).dataSourceRule(dataSourceRule).build();
+////        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1"))
+//        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item"))
+//                .dataSourceRule(dataSourceRule)
+////                .dataSourceRule(new DataSourceRule(createDataSourceMap02()))
+//                .build();
+//        ShardingRule shardingRule = ShardingRule.builder()
+//                .dataSourceRule(dataSourceRule)
+//                .tableRules(Arrays.asList(orderTableRule, orderItemTableRule))
+//                .bindingTableRules(Collections.singletonList(new BindingTableRule(Arrays.asList(orderTableRule, orderItemTableRule))))
+////                .bindingTableRules(Arrays.asList(new BindingTableRule(Collections.singletonList(orderTableRule)),
+////                        new BindingTableRule(Collections.singletonList(orderItemTableRule))))
+//                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
+//                .tableShardingStrategy(new TableShardingStrategy("order_id", new ModuloTableShardingAlgorithm())).build();
+//        return new ShardingDataSource(shardingRule);
+//    }
+
     private static ShardingDataSource getShardingDataSource() {
         DataSourceRule dataSourceRule = new DataSourceRule(createDataSourceMap());
 //        TableRule orderTableRule = TableRule.builder("t_order").actualTables(Arrays.asList("t_order_0", "t_order_1"))
@@ -180,18 +205,55 @@ public final class Main {
 //                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
                 .build();
 //        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1")).dataSourceRule(dataSourceRule).build();
-//        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1"))
-        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item"))
+        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item_0", "t_order_item_1", "t_order_item_2", "t_order_item_3"))
+//        TableRule orderItemTableRule = TableRule.builder("t_order_item").actualTables(Arrays.asList("t_order_item"))
                 .dataSourceRule(dataSourceRule)
 //                .dataSourceRule(new DataSourceRule(createDataSourceMap02()))
                 .build();
         ShardingRule shardingRule = ShardingRule.builder()
                 .dataSourceRule(dataSourceRule)
                 .tableRules(Arrays.asList(orderTableRule, orderItemTableRule))
-                .bindingTableRules(Collections.singletonList(new BindingTableRule(Arrays.asList(orderTableRule, orderItemTableRule))))
+//                .bindingTableRules(Collections.singletonList(new BindingTableRule(Arrays.asList(orderTableRule, orderItemTableRule))))
 //                .bindingTableRules(Arrays.asList(new BindingTableRule(Collections.singletonList(orderTableRule)),
 //                        new BindingTableRule(Collections.singletonList(orderItemTableRule))))
-                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new ModuloDatabaseShardingAlgorithm()))
+                .databaseShardingStrategy(new DatabaseShardingStrategy("order_id", new SingleKeyDatabaseShardingAlgorithm<Integer>() {
+                    @Override
+                    public String doEqualSharding(final Collection<String> dataSourceNames, final ShardingValue<Integer> shardingValue) {
+                        for (String each : dataSourceNames) {
+                            if (each.endsWith(shardingValue.getValue() % 2 + "")) {
+                                return each;
+                            }
+                        }
+                        throw new IllegalArgumentException();
+                    }
+
+                    @Override
+                    public Collection<String> doInSharding(final Collection<String> dataSourceNames, final ShardingValue<Integer> shardingValue) {
+                        Collection<String> result = new LinkedHashSet<>(dataSourceNames.size());
+                        for (Integer value : shardingValue.getValues()) {
+                            for (String dataSourceName : dataSourceNames) {
+                                if (dataSourceName.endsWith(value % 2 + "")) {
+                                    result.add(dataSourceName);
+                                }
+                            }
+                        }
+                        return result;
+                    }
+
+                    @Override
+                    public Collection<String> doBetweenSharding(final Collection<String> dataSourceNames, final ShardingValue<Integer> shardingValue) {
+                        Collection<String> result = new LinkedHashSet<>(dataSourceNames.size());
+                        Range<Integer> range = shardingValue.getValueRange();
+                        for (Integer i = range.lowerEndpoint(); i <= range.upperEndpoint(); i++) {
+                            for (String each : dataSourceNames) {
+                                if (each.endsWith(i % 2 + "")) {
+                                    result.add(each);
+                                }
+                            }
+                        }
+                        return result;
+                    }
+                }))
                 .tableShardingStrategy(new TableShardingStrategy("order_id", new ModuloTableShardingAlgorithm())).build();
         return new ShardingDataSource(shardingRule);
     }

@@ -40,19 +40,36 @@ import java.util.List;
 @Getter
 @ToString
 public final class TableRule {
-    
+
+    /**
+     * 逻辑表
+     */
     private final String logicTable;
-    
+    /**
+     * 是否动态表
+     * 逻辑表和真实表不一定需要在配置规则中静态配置
+     */
     private final boolean dynamic;
-    
+    /**
+     * 数据分片节点
+     * 由数据源名称和数据表组成
+     */
     private final List<DataNode> actualTables;
-    
+    /**
+     * 分库策略
+     */
     private final DatabaseShardingStrategy databaseShardingStrategy;
-    
+    /**
+     * 分表策略
+     */
     private final TableShardingStrategy tableShardingStrategy;
-    
+    /**
+     * 主键字段
+     */
     private final String generateKeyColumn;
-    
+    /**
+     * 主键生成器
+     */
     private final KeyGenerator keyGenerator;
     
     /**
@@ -82,13 +99,13 @@ public final class TableRule {
         this.dynamic = dynamic;
         this.databaseShardingStrategy = databaseShardingStrategy;
         this.tableShardingStrategy = tableShardingStrategy;
-        if (dynamic) {
+        if (dynamic) { // 动态表的分库分表数据单元
             Preconditions.checkNotNull(dataSourceRule);
             this.actualTables = generateDataNodes(dataSourceRule);
-        } else if (null == actualTables || actualTables.isEmpty()) {
+        } else if (null == actualTables || actualTables.isEmpty()) { // 静态表的分库分表数据单元
             Preconditions.checkNotNull(dataSourceRule);
             this.actualTables = generateDataNodes(Collections.singletonList(logicTable), dataSourceRule, dataSourceNames);
-        } else {
+        } else { // 静态表的分库分表数据单元
             this.actualTables = generateDataNodes(actualTables, dataSourceRule, dataSourceNames);
         }
         this.generateKeyColumn = generateKeyColumn;
@@ -104,7 +121,13 @@ public final class TableRule {
     public static TableRuleBuilder builder(final String logicTable) {
         return new TableRuleBuilder(logicTable);
     }
-    
+
+    /**
+     * 创建动态数据分片节点
+     *
+     * @param dataSourceRule 数据源配置对象
+     * @return 动态数据分片节点
+     */
     private List<DataNode> generateDataNodes(final DataSourceRule dataSourceRule) {
         Collection<String> dataSourceNames = dataSourceRule.getDataSourceNames();
         List<DataNode> result = new ArrayList<>(dataSourceNames.size());
@@ -113,12 +136,20 @@ public final class TableRule {
         }
         return result;
     }
-    
+
+    /**
+     * 生成静态数据分片节点
+     *
+     * @param actualTables 真实表
+     * @param dataSourceRule 数据源配置对象
+     * @param actualDataSourceNames 数据源名集合
+     * @return 静态数据分片节点
+     */
     private List<DataNode> generateDataNodes(final List<String> actualTables, final DataSourceRule dataSourceRule, final Collection<String> actualDataSourceNames) {
         Collection<String> dataSourceNames = getDataSourceNames(dataSourceRule, actualDataSourceNames);
         List<DataNode> result = new ArrayList<>(actualTables.size() * (dataSourceNames.isEmpty() ? 1 : dataSourceNames.size()));
         for (String actualTable : actualTables) {
-            if (DataNode.isValidDataNode(actualTable)) {
+            if (DataNode.isValidDataNode(actualTable)) { // 当 actualTable 为 ${dataSourceName}.${tableName} 时
                 result.add(new DataNode(actualTable));
             } else {
                 for (String dataSourceName : dataSourceNames) {
@@ -128,7 +159,14 @@ public final class TableRule {
         }
         return result;
     }
-    
+
+    /**
+     * 根据 数据源配置对象 和 数据源名集合 获得 最终的数据源名集合
+     *
+     * @param dataSourceRule 数据源配置对象
+     * @param actualDataSourceNames 数据源名集合
+     * @return 最终的数据源名集合
+     */
     private Collection<String> getDataSourceNames(final DataSourceRule dataSourceRule, final Collection<String> actualDataSourceNames) {
         if (null == dataSourceRule) {
             return Collections.emptyList();
@@ -215,23 +253,44 @@ public final class TableRule {
      */
     @RequiredArgsConstructor
     public static class TableRuleBuilder {
-        
+
+        /**
+         * 逻辑表
+         */
         private final String logicTable;
-        
+        /**
+         * 是否动态表
+         * 逻辑表和真实表不一定需要在配置规则中静态配置
+         */
         private boolean dynamic;
-        
+        /**
+         * 真实表
+         * 在分片的数据库中真实存在的物理表
+         */
         private List<String> actualTables;
-        
+        /**
+         * 数据源配置对象
+         */
         private DataSourceRule dataSourceRule;
-        
+        /**
+         * 数据源名集合
+         */
         private Collection<String> dataSourceNames;
-        
+        /**
+         * 分库策略
+         */
         private DatabaseShardingStrategy databaseShardingStrategy;
-        
+        /**
+         * 分表策略
+         */
         private TableShardingStrategy tableShardingStrategy;
-        
+        /**
+         * 主键字段
+         */
         private String generateKeyColumn;
-        
+        /**
+         * 主键生成器实现类
+         */
         private Class<? extends KeyGenerator> keyGeneratorClass;
         
         /**
