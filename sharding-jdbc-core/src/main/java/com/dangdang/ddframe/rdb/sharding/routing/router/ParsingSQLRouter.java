@@ -128,20 +128,34 @@ public final class ParsingSQLRouter implements SQLRouter {
         }
         return routingEngine.route();
     }
-    
+
+    /**
+     * 处理 插入SQL 主键字段
+     * 当 主键编号 未生成时，{@link ShardingRule#generateKey(String)} 进行生成
+     *
+     * @param parameters 占位符参数
+     * @param insertStatement Insert SQL语句对象
+     * @param sqlRouteResult SQL路由结果
+     */
     private void processGeneratedKey(final List<Object> parameters, final InsertStatement insertStatement, final SQLRouteResult sqlRouteResult) {
         GeneratedKey generatedKey = insertStatement.getGeneratedKey();
-        if (parameters.isEmpty()) {
+        if (parameters.isEmpty()) { // 无占位符，INSERT INTO t_order(order_id, user_id) VALUES (1, 100);
             sqlRouteResult.getGeneratedKeys().add(generatedKey.getValue());
-        } else if (parameters.size() == generatedKey.getIndex()) {
-            Number key = shardingRule.generateKey(insertStatement.getTables().getSingleTableName());
+        } else if (parameters.size() == generatedKey.getIndex()) { // 主键字段不存在存在，INSERT INTO t_order(user_id) VALUES(?);
+            Number key = shardingRule.generateKey(insertStatement.getTables().getSingleTableName()); // 生成主键编号
             parameters.add(key);
             setGeneratedKeys(sqlRouteResult, key);
-        } else if (-1 != generatedKey.getIndex()) {
-            setGeneratedKeys(sqlRouteResult, (Number) parameters.get(generatedKey.getIndex()));
+        } else if (-1 != generatedKey.getIndex()) { // 主键字段存在，INSERT INTO t_order(order_id, user_id) VALUES(?, ?);
+            setGeneratedKeys(sqlRouteResult, (Number) parameters.get(generatedKey.getIndex())); // 生成主键编号
         }
     }
-    
+
+    /**
+     * 设置 主键编号 到 SQL路由结果
+     *
+     * @param sqlRouteResult SQL路由结果
+     * @param generatedKey 主键编号
+     */
     private void setGeneratedKeys(final SQLRouteResult sqlRouteResult, final Number generatedKey) {
         generatedKeys.add(generatedKey);
         sqlRouteResult.getGeneratedKeys().clear();

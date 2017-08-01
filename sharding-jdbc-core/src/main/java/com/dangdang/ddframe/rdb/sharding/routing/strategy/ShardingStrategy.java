@@ -32,10 +32,15 @@ import java.util.TreeSet;
  * @author zhangliang
  */
 public class ShardingStrategy {
-    
+
+    /**
+     * 分片列集合
+     */
     @Getter
     private final Collection<String> shardingColumns;
-    
+    /**
+     * 分片算法
+     */
     private final ShardingAlgorithm shardingAlgorithm;
     
     public ShardingStrategy(final String shardingColumn, final ShardingAlgorithm shardingAlgorithm) {
@@ -59,7 +64,7 @@ public class ShardingStrategy {
     public Collection<String> doStaticSharding(final SQLType sqlType, final Collection<String> availableTargetNames, final Collection<ShardingValue<?>> shardingValues) {
         Collection<String> result = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         if (shardingValues.isEmpty()) {
-            Preconditions.checkState(!isInsertMultiple(sqlType, availableTargetNames), "INSERT statement should contain sharding value.");
+            Preconditions.checkState(!isInsertMultiple(sqlType, availableTargetNames), "INSERT statement should contain sharding value."); // 插入不能有多资源对象
             result.addAll(availableTargetNames);
         } else {
             result.addAll(doSharding(shardingValues, availableTargetNames));
@@ -74,18 +79,27 @@ public class ShardingStrategy {
      * @return 分库后指向的分片资源集合
      */
     public Collection<String> doDynamicSharding(final Collection<ShardingValue<?>> shardingValues) {
-        Preconditions.checkState(!shardingValues.isEmpty(), "Dynamic table should contain sharding value.");
+        Preconditions.checkState(!shardingValues.isEmpty(), "Dynamic table should contain sharding value."); // 动态分片必须有分片值
         Collection<String> availableTargetNames = Collections.emptyList();
         Collection<String> result = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         result.addAll(doSharding(shardingValues, availableTargetNames));
         return result;
     }
-    
+
+    /**
+     * 计算分片
+     *
+     * @param shardingValues 分片值集合
+     * @param availableTargetNames 所有的可用分片资源集合
+     * @return 分库后指向的分片资源集合
+     */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private Collection<String> doSharding(final Collection<ShardingValue<?>> shardingValues, final Collection<String> availableTargetNames) {
+        // 无片键
         if (shardingAlgorithm instanceof NoneKeyShardingAlgorithm) {
             return Collections.singletonList(((NoneKeyShardingAlgorithm) shardingAlgorithm).doSharding(availableTargetNames, shardingValues.iterator().next()));
         }
+        // 单片键
         if (shardingAlgorithm instanceof SingleKeyShardingAlgorithm) {
             SingleKeyShardingAlgorithm<?> singleKeyShardingAlgorithm = (SingleKeyShardingAlgorithm<?>) shardingAlgorithm;
             ShardingValue shardingValue = shardingValues.iterator().next();
@@ -100,13 +114,22 @@ public class ShardingStrategy {
                     throw new UnsupportedOperationException(shardingValue.getType().getClass().getName());
             }
         }
+        // 多片键
         if (shardingAlgorithm instanceof MultipleKeysShardingAlgorithm) {
             return ((MultipleKeysShardingAlgorithm) shardingAlgorithm).doSharding(availableTargetNames, shardingValues);
         }
         throw new UnsupportedOperationException(shardingAlgorithm.getClass().getName());
     }
-    
+
+    /**
+     * 插入SQL 是否插入多个分片
+     *
+     * @param sqlType SQL类型
+     * @param availableTargetNames 所有的可用分片资源集合
+     * @return 是否
+     */
     private boolean isInsertMultiple(final SQLType sqlType, final Collection<String> availableTargetNames) {
         return SQLType.INSERT == sqlType && availableTargetNames.size() > 1;
     }
+
 }

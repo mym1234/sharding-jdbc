@@ -20,13 +20,16 @@ package com.dangdang.ddframe.rdb.sharding.routing.type;
 import lombok.Getter;
 
 /**
- *  路由结果.
+ * 路由结果.
  * 
  * @author zhangliang
  */
 @Getter
 public class RoutingResult {
-    
+
+    /**
+     * 路由表单元集合
+     */
     private final TableUnits tableUnits = new TableUnits();
     
     /**

@@ -17,13 +17,16 @@
 
 package com.dangdang.ddframe.rdb.sharding.example.jdbc.algorithm;
 
-import java.util.Collection;
-import java.util.LinkedHashSet;
-
 import com.dangdang.ddframe.rdb.sharding.api.ShardingValue;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.table.SingleKeyTableShardingAlgorithm;
 import com.google.common.collect.Range;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
+
+/**
+ * 余数基偶分表算法
+ */
 public final class ModuloTableShardingAlgorithm implements SingleKeyTableShardingAlgorithm<Integer> {
     
     @Override

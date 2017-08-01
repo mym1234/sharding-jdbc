@@ -32,10 +32,18 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public final class TableUnit {
-    
+
+    /**
+     * 数据源名字
+     */
     private final String dataSourceName;
-    
+    /**
+     * 逻辑表名
+     */
     private final String logicTableName;
-    
+    /**
+     * 真实表名
+     */
     private final String actualTableName;
+
 }

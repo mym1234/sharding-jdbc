@@ -1,11 +1,13 @@
 package com.dangdang.ddframe.rdb.sharding.example.jdbc.yunai;
 
 import com.dangdang.ddframe.rdb.sharding.api.ShardingValue;
+import com.dangdang.ddframe.rdb.sharding.api.rule.BindingTableRule;
 import com.dangdang.ddframe.rdb.sharding.api.rule.DataSourceRule;
 import com.dangdang.ddframe.rdb.sharding.api.rule.ShardingRule;
 import com.dangdang.ddframe.rdb.sharding.api.rule.TableRule;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.database.DatabaseShardingStrategy;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.database.NoneDatabaseShardingAlgorithm;
+import com.dangdang.ddframe.rdb.sharding.api.strategy.database.SingleKeyDatabaseShardingAlgorithm;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.table.NoneTableShardingAlgorithm;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.table.SingleKeyTableShardingAlgorithm;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.table.TableShardingStrategy;
@@ -88,6 +90,7 @@ public class ConfigMain {
 
     /**
      * 测试多库多表
+     * 无路由字段 + 无过滤条件 + 无bind
      */
     public static void testMultiDbMultiTable() {
         // 初始化
@@ -108,13 +111,309 @@ public class ConfigMain {
 
 //                .dataSourceNames(Arrays.asList("single_db_single_table"))
                 .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
-
                 .databaseShardingStrategy(new DatabaseShardingStrategy(new NoneKeyModuloDatabaseShardingAlgorithm()))
                 .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm()))
                 .build();
 
         ShardingRule shardingRule = ShardingRule.builder()
                 .tableRules(Arrays.asList(rule, rule2))
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .build();
+        ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
+        // 执行
+        String sql = "SELECT * FROM t_order o join t_order_item i ON o.order_id = i.order_id";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println(rs.getLong(1) + "\t" + rs.getLong(2) + "\t" + rs.getString(3));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.out.println("");
+    }
+
+    /**
+     * 测试多库多表
+     * 无路由字段 + 无过滤条件 + 有bind
+     */
+    public static void testMultiDbMultiTable2() {
+        // 初始化
+        TableRule rule = TableRule
+                .builder("t_order")
+                .actualTables(Arrays.asList("t_order_01", "t_order_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+
+                .databaseShardingStrategy(new DatabaseShardingStrategy(new NoneKeyModuloDatabaseShardingAlgorithm()))
+                .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm()))
+                .build();
+
+        TableRule rule2 = TableRule
+                .builder("t_order_item")
+                .actualTables(Arrays.asList("t_order_item_01", "t_order_item_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .databaseShardingStrategy(new DatabaseShardingStrategy(new NoneKeyModuloDatabaseShardingAlgorithm()))
+                .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm()))
+                .build();
+
+        ShardingRule shardingRule = ShardingRule.builder()
+                .tableRules(Arrays.asList(rule, rule2))
+                .bindingTableRules(
+                        Arrays.asList(
+                                new BindingTableRule(Arrays.asList(rule, rule2))
+                        )
+                )
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .build();
+        ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
+        // 执行
+        String sql = "SELECT * FROM t_order o join t_order_item i ON o.order_id = i.order_id";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println(rs.getLong(1) + "\t" + rs.getLong(2) + "\t" + rs.getString(3));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.out.println("");
+    }
+
+    /**
+     * 测试多库多表
+     * 无路由字段 + 相同路由算法 + 无bind
+     */
+    public static void testMultiDbMultiTable3() {
+
+        SingleKeyDatabaseShardingAlgorithm databaseShardingAlgorithm = new SingleKeyDatabaseShardingAlgorithm<Long>() {
+
+            @Override
+            public String doEqualSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+                List<String> list = new ArrayList<>(availableTargetNames);
+                return list.get(shardingValue.getValue().intValue() % list.size());
+            }
+
+            @Override
+            public Collection<String> doInSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+                return null;
+            }
+
+            @Override
+            public Collection<String> doBetweenSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+                return null;
+            }
+        };
+
+        SingleKeyTableShardingAlgorithm tableShardingAlgorithm = new SingleKeyTableShardingAlgorithm<Integer>() {
+
+            @Override
+            public String doEqualSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                List<String> list = new ArrayList<>(availableTargetNames);
+                return list.get(shardingValue.getValue().intValue() % list.size());
+            }
+
+            @Override
+            public Collection<String> doInSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                return null;
+            }
+
+            @Override
+            public Collection<String> doBetweenSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                return null;
+            }
+        };
+
+        // 初始化
+        TableRule rule = TableRule
+                .builder("t_order")
+                .actualTables(Arrays.asList("t_order_01", "t_order_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+
+                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", databaseShardingAlgorithm))
+                .tableShardingStrategy(new TableShardingStrategy("order_id", tableShardingAlgorithm))
+                .build();
+
+        TableRule rule2 = TableRule
+                .builder("t_order_item")
+                .actualTables(Arrays.asList("t_order_item_01", "t_order_item_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .databaseShardingStrategy(new DatabaseShardingStrategy(new NoneKeyModuloDatabaseShardingAlgorithm()))
+                .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm()))
+                .build();
+
+        ShardingRule shardingRule = ShardingRule.builder()
+                .tableRules(Arrays.asList(rule, rule2))
+
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .build();
+        ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
+        // 执行
+        String sql = "SELECT * FROM t_order o join t_order_item i ON o.order_id = i.order_id WHERE o.order_id = 10";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    System.out.println(rs.getLong(1) + "\t" + rs.getLong(2) + "\t" + rs.getString(3));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        System.out.println("");
+    }
+
+    /**
+     * 测试多库多表
+     * 无路由字段 + 相同路由算法 + 无bind
+     * Hint SQL
+     */
+    public static void testMultiDbMultiTable4() {
+
+//        HintManager.getInstance().setDatabaseShardingValue(10);
+//        HintManager.getInstance().setDatabaseShardingValue(1);
+
+        SingleKeyDatabaseShardingAlgorithm databaseShardingAlgorithm = new SingleKeyDatabaseShardingAlgorithm<Long>() {
+
+            @Override
+            public String doEqualSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+                List<String> list = new ArrayList<>(availableTargetNames);
+                return list.get(shardingValue.getValue().intValue() % list.size());
+            }
+
+            @Override
+            public Collection<String> doInSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+                return null;
+            }
+
+            @Override
+            public Collection<String> doBetweenSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+                return null;
+            }
+        };
+
+        SingleKeyTableShardingAlgorithm tableShardingAlgorithm = new SingleKeyTableShardingAlgorithm<Integer>() {
+
+            @Override
+            public String doEqualSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                List<String> list = new ArrayList<>(availableTargetNames);
+                return list.get(shardingValue.getValue().intValue() % list.size());
+            }
+
+            @Override
+            public Collection<String> doInSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                return null;
+            }
+
+            @Override
+            public Collection<String> doBetweenSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                return null;
+            }
+        };
+
+        // 初始化
+        TableRule rule = TableRule
+                .builder("t_order")
+                .actualTables(Arrays.asList("t_order_01", "t_order_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+
+                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", databaseShardingAlgorithm))
+                .tableShardingStrategy(new TableShardingStrategy("order_id", tableShardingAlgorithm))
+                .generateKeyColumn("order_id")
+                .build();
+
+        TableRule rule2 = TableRule
+                .builder("t_order_item")
+                .actualTables(Arrays.asList("t_order_item_01", "t_order_item_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .databaseShardingStrategy(new DatabaseShardingStrategy(new NoneKeyModuloDatabaseShardingAlgorithm()))
+                .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm()))
+                .build();
+
+        ShardingRule shardingRule = ShardingRule.builder()
+                .tableRules(Arrays.asList(rule, rule2))
+
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .build();
+        ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
+        // 执行
+        if (false) {
+//            String sql = "INSERT INTO t_order(order_id, user_id) VALUES(?, ?);";
+            String sql = "INSERT INTO t_order(user_id) VALUES(?);";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setLong(2, 100L); // user_id
+                int result = ps.executeUpdate();
+                System.out.println("插入完成：" + result);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } else {
+            String sql = "SELECT * FROM t_order o join t_order_item i ON o.order_id = i.order_id";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        System.out.println(rs.getLong(1) + "\t" + rs.getLong(2) + "\t" + rs.getString(3));
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("");
+    }
+
+    /**
+     * 多库多表，
+     * NoneDatabaseShardingAlgorithm 、NoneTableShardingAlgorithm
+     */
+    public static void testNoneKeyAlgorithm() {
+
+        // 初始化
+        TableRule rule = TableRule
+                .builder("t_order")
+                .actualTables(Arrays.asList("t_order_01", "t_order_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+
+                .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", new NoneDatabaseShardingAlgorithm()))
+                .tableShardingStrategy(new TableShardingStrategy("order_id", new NoneTableShardingAlgorithm()))
+                .build();
+
+        TableRule rule2 = TableRule
+                .builder("t_order_item")
+                .actualTables(Arrays.asList("t_order_item_01", "t_order_item_02"))
+
+//                .dataSourceNames(Arrays.asList("single_db_single_table"))
+
+                .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
+                .databaseShardingStrategy(new DatabaseShardingStrategy(new NoneKeyModuloDatabaseShardingAlgorithm()))
+                .tableShardingStrategy(new TableShardingStrategy("", new NoneTableShardingAlgorithm()))
+                .build();
+
+        ShardingRule shardingRule = ShardingRule.builder()
+                .tableRules(Arrays.asList(rule, rule2))
+
                 .dataSourceRule(new DataSourceRule(buildDataSourceRule("multi_db_multi_table_01", "multi_db_multi_table_02")))
                 .build();
         ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
@@ -184,7 +483,9 @@ public class ConfigMain {
                 .build();
         ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
         // 执行
-        String sql = "SELECT * FROM t_order WHERE order_id = ?";
+//        String sql = "SELECT * FROM t_order WHERE order_id = ?";
+//        String sql = "SELECT * FROM t_order";
+        String sql = "INSERT INTO t_order (order_id, user_id) VALUES(1, 2)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, 1L);
@@ -202,7 +503,10 @@ public class ConfigMain {
     public static void main(String[] args) {
 //        testSingleDbSingleTable();
 //        testDynamicTable();
-        testMultiDbMultiTable();
+//        testMultiDbMultiTable();
+        testMultiDbMultiTable2();
+//        testMultiDbMultiTable3();
+//        testMultiDbMultiTable4();
     }
 
 }

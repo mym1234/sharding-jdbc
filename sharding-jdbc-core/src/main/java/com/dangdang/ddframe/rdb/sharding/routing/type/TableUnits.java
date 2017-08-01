@@ -41,7 +41,10 @@ import java.util.TreeSet;
 @Getter
 @ToString
 public final class TableUnits {
-    
+
+    /**
+     * 路由表单元集合
+     */
     private final List<TableUnit> tableUnits = new LinkedList<>();
     
     /**

@@ -50,7 +50,7 @@ public final class DatabaseHintSQLRouter implements SQLRouter {
     
     @Override
     public SQLStatement parse(final String logicSQL, final int parametersSize) {
-        return new SQLJudgeEngine(logicSQL).judge();
+        return new SQLJudgeEngine(logicSQL).judge(); // 只解析 SQL 类型
     }
     
     @Override
@@ -58,7 +58,8 @@ public final class DatabaseHintSQLRouter implements SQLRouter {
     public SQLRouteResult route(final String logicSQL, final List<Object> parameters, final SQLStatement sqlStatement) {
         Context context = MetricsContext.start("Route SQL");
         SQLRouteResult result = new SQLRouteResult(sqlStatement);
-        RoutingResult routingResult = new DatabaseHintRoutingEngine(shardingRule.getDataSourceRule(), shardingRule.getDatabaseShardingStrategy(), sqlStatement.getType()).route();
+        RoutingResult routingResult = new DatabaseHintRoutingEngine(shardingRule.getDataSourceRule(), shardingRule.getDatabaseShardingStrategy(), sqlStatement.getType())
+                .route();
         for (TableUnit each : routingResult.getTableUnits().getTableUnits()) {
             result.getExecutionUnits().add(new SQLExecutionUnit(each.getDataSourceName(), logicSQL));
         }
