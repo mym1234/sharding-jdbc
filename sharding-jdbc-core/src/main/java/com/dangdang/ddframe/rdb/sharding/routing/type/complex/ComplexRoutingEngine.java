@@ -58,12 +58,14 @@ public final class ComplexRoutingEngine implements RoutingEngine {
     public RoutingResult route() {
         Collection<RoutingResult> result = new ArrayList<>(logicTables.size());
         Collection<String> bindingTableNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        // 计算每个逻辑表的简单路由分片
         for (String each : logicTables) {
             Optional<TableRule> tableRule = shardingRule.tryFindTableRule(each);
             if (tableRule.isPresent()) {
                 if (!bindingTableNames.contains(each)) {
                     result.add(new SimpleRoutingEngine(shardingRule, parameters, tableRule.get().getLogicTable(), sqlStatement).route());
                 }
+                // 互为 BindingTable 关系的表加到 bindingTableNames 里，不重复计算分片
                 Optional<BindingTableRule> bindingTableRule = shardingRule.findBindingTableRule(each);
                 if (bindingTableRule.isPresent()) {
                     bindingTableNames.addAll(Lists.transform(bindingTableRule.get().getTableRules(), new Function<TableRule, String>() {
@@ -80,9 +82,12 @@ public final class ComplexRoutingEngine implements RoutingEngine {
         if (result.isEmpty()) {
             throw new ShardingJdbcException("Cannot find table rule and default data source with logic tables: '%s'", logicTables);
         }
+        // 防御性编程。shardingRule#isAllBindingTables() 已经过滤了这个情况。
         if (1 == result.size()) {
             return result.iterator().next();
         }
+        // 交给 CartesianRoutingEngine 形成笛卡尔积结果
         return new CartesianRoutingEngine(result).route();
     }
+
 }

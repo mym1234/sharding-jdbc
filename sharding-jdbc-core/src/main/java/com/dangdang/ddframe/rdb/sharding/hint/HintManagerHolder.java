@@ -25,7 +25,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 /**
- * 线索分片管理器的本地线程持有者.
+ * 暗示分片管理器的本地线程持有者.
  *
  * @author zhangliang
  */
@@ -35,7 +35,10 @@ public final class HintManagerHolder {
     public static final String DB_TABLE_NAME = "DB_TABLE_NAME";
     
     public static final String DB_COLUMN_NAME = "DB_COLUMN_NAME";
-    
+
+    /**
+     * HintManager 线程变量
+     */
     private static final ThreadLocal<HintManager> HINT_MANAGER_HOLDER = new ThreadLocal<>();
     
     /**

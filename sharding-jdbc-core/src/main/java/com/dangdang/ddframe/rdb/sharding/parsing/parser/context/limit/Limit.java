@@ -83,7 +83,13 @@ public final class Limit {
             rewrite(parameters, isFetchAll);
         }
     }
-    
+
+    /**
+     * 将占位符参数里是分页的参数赋值给 offset 、rowCount
+     * 赋值的前提条件是 offset、rowCount 是 占位符
+     *
+     * @param parameters 占位符参数
+     */
     private void fill(final List<Object> parameters) {
         int offset = 0;
         if (null != this.offset) {
@@ -99,10 +105,17 @@ public final class Limit {
             throw new SQLParsingException("LIMIT offset and row count can not be a negative value.");
         }
     }
-    
+
+    /**
+     * 重写分页条件对应的参数
+     *
+     * @param parameters 参数
+     * @param isFetchAll 是否拉取所有
+     */
     private void rewrite(final List<Object> parameters, final boolean isFetchAll) {
         int rewriteOffset = 0;
         int rewriteRowCount;
+        // 重写
         if (isFetchAll) {
             rewriteRowCount = Integer.MAX_VALUE;
         } else if (rowCountRewriteFlag) {
@@ -110,6 +123,7 @@ public final class Limit {
         } else {
             rewriteRowCount = rowCount.getValue();
         }
+        // 参数设置
         if (null != offset && offset.getIndex() > -1) {
             parameters.set(offset.getIndex(), rewriteOffset);
         }

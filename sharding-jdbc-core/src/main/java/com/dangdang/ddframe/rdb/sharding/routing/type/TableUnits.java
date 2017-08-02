@@ -109,6 +109,7 @@ public final class TableUnits {
     
     /**
      * 根据数据源名称获取数据源和逻辑表名称集合的映射关系.
+     * ##芋艿：一个 TableUnits 出现逻辑表是个 Set 的情况，需要包含包含 同库TableUnit 并且 不同逻辑表
      *
      * @param dataSourceNames 待获取的数据源名称集合
      * @return 数据源和逻辑表名称集合的映射关系

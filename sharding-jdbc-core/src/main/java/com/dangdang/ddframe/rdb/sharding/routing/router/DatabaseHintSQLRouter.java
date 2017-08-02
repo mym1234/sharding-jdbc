@@ -38,7 +38,10 @@ import java.util.List;
  * @author zhangiang
  */
 public final class DatabaseHintSQLRouter implements SQLRouter {
-    
+
+    /**
+     * 分片规则
+     */
     private final ShardingRule shardingRule;
     
     private final boolean showSQL;
@@ -58,8 +61,10 @@ public final class DatabaseHintSQLRouter implements SQLRouter {
     public SQLRouteResult route(final String logicSQL, final List<Object> parameters, final SQLStatement sqlStatement) {
         Context context = MetricsContext.start("Route SQL");
         SQLRouteResult result = new SQLRouteResult(sqlStatement);
+        // 路由
         RoutingResult routingResult = new DatabaseHintRoutingEngine(shardingRule.getDataSourceRule(), shardingRule.getDatabaseShardingStrategy(), sqlStatement.getType())
                 .route();
+        // SQL最小执行单元
         for (TableUnit each : routingResult.getTableUnits().getTableUnits()) {
             result.getExecutionUnits().add(new SQLExecutionUnit(each.getDataSourceName(), logicSQL));
         }
@@ -69,4 +74,5 @@ public final class DatabaseHintSQLRouter implements SQLRouter {
         }
         return result;
     }
+
 }

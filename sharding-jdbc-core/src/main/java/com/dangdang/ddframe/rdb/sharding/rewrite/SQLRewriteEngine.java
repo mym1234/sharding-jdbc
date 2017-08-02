@@ -82,11 +82,13 @@ public final class SQLRewriteEngine {
             return result;
         }
         int count = 0;
+        // 排序SQLToken，按照 beginPosition 递增
         sortByBeginPosition();
         for (SQLToken each : sqlTokens) {
-            if (0 == count) {
+            if (0 == count) { // 拼接第一个 SQLToken 前的字符串
                 result.appendLiterals(originalSQL.substring(0, each.getBeginPosition()));
             }
+            // 拼接每个SQLToken
             if (each instanceof TableToken) {
                 appendTableToken(result, (TableToken) each, count, sqlTokens);
             } else if (each instanceof ItemsToken) {
@@ -112,49 +114,98 @@ public final class SQLRewriteEngine {
             }
         });
     }
-    
+
+    /**
+     * 拼接 TableToken
+     *
+     * @param sqlBuilder SQL构建器
+     * @param tableToken tableToken
+     * @param count tableToken 在 sqlTokens 的顺序
+     * @param sqlTokens sqlTokens
+     */
     private void appendTableToken(final SQLBuilder sqlBuilder, final TableToken tableToken, final int count, final List<SQLToken> sqlTokens) {
+        // 拼接 TableToken
         String tableName = sqlStatement.getTables().getTableNames().contains(tableToken.getTableName()) ? tableToken.getTableName() : tableToken.getOriginalLiterals();
         sqlBuilder.appendTable(tableName);
+        // SQLToken 后面的字符串
         int beginPosition = tableToken.getBeginPosition() + tableToken.getOriginalLiterals().length();
         int endPosition = sqlTokens.size() - 1 == count ? originalSQL.length() : sqlTokens.get(count + 1).getBeginPosition();
         sqlBuilder.appendLiterals(originalSQL.substring(beginPosition, endPosition));
     }
-    
+
+    /**
+     * 拼接 TableToken
+     *
+     * @param sqlBuilder SQL构建器
+     * @param itemsToken itemsToken
+     * @param count itemsToken 在 sqlTokens 的顺序
+     * @param sqlTokens sqlTokens
+     */
     private void appendItemsToken(final SQLBuilder sqlBuilder, final ItemsToken itemsToken, final int count, final List<SQLToken> sqlTokens) {
+        // 拼接 ItemsToken
         for (String item : itemsToken.getItems()) {
             sqlBuilder.appendLiterals(", ");
             sqlBuilder.appendLiterals(item);
         }
+        // SQLToken 后面的字符串
         int beginPosition = itemsToken.getBeginPosition();
         int endPosition = sqlTokens.size() - 1 == count ? originalSQL.length() : sqlTokens.get(count + 1).getBeginPosition();
         sqlBuilder.appendLiterals(originalSQL.substring(beginPosition, endPosition));
     }
-    
+
+    /**
+     * 拼接 RowCountToken
+     *
+     * @param sqlBuilder SQL构建器
+     * @param rowCountToken rowCountToken
+     * @param count count 在 sqlTokens 的顺序
+     * @param sqlTokens sqlTokens
+     * @param isRewrite 是否重写。当路由结果为单分片时无需重写
+     */
     private void appendLimitRowCount(final SQLBuilder sqlBuilder, final RowCountToken rowCountToken, final int count, final List<SQLToken> sqlTokens, final boolean isRewrite) {
         SelectStatement selectStatement = (SelectStatement) sqlStatement;
         Limit limit = selectStatement.getLimit();
-        if (!isRewrite) {
+        if (!isRewrite) { // 路由结果为单分片
             sqlBuilder.appendLiterals(String.valueOf(rowCountToken.getRowCount()));
-        } else if ((!selectStatement.getGroupByItems().isEmpty() || !selectStatement.getAggregationSelectItems().isEmpty()) && !selectStatement.isSameGroupByAndOrderByItems()) {
+        } else if ((!selectStatement.getGroupByItems().isEmpty() || // [1.1] 跨分片分组需要在内存计算，可能需要全部加载
+                !selectStatement.getAggregationSelectItems().isEmpty()) // [1.2] 跨分片聚合列需要在内存计算，可能需要全部加载
+                && !selectStatement.isSameGroupByAndOrderByItems()) { // [2] 如果排序一致，即各分片已经排序好结果，就不需要全部加载
             sqlBuilder.appendLiterals(String.valueOf(Integer.MAX_VALUE));
-        } else {
+        } else { // 路由结果为多分片
             sqlBuilder.appendLiterals(String.valueOf(limit.isRowCountRewriteFlag() ? rowCountToken.getRowCount() + limit.getOffsetValue() : rowCountToken.getRowCount()));
         }
+        // SQLToken 后面的字符串
         int beginPosition = rowCountToken.getBeginPosition() + String.valueOf(rowCountToken.getRowCount()).length();
         int endPosition = sqlTokens.size() - 1 == count ? originalSQL.length() : sqlTokens.get(count + 1).getBeginPosition();
         sqlBuilder.appendLiterals(originalSQL.substring(beginPosition, endPosition));
     }
-    
+
+    /**
+     * 拼接 OffsetToken
+     *
+     * @param sqlBuilder SQL构建器
+     * @param offsetToken offsetToken
+     * @param count offsetToken 在 sqlTokens 的顺序
+     * @param sqlTokens sqlTokens
+     * @param isRewrite 是否重写。当路由结果为单分片时无需重写
+     */
     private void appendLimitOffsetToken(final SQLBuilder sqlBuilder, final OffsetToken offsetToken, final int count, final List<SQLToken> sqlTokens, final boolean isRewrite) {
+        // 拼接 OffsetToken
         sqlBuilder.appendLiterals(isRewrite ? "0" : String.valueOf(offsetToken.getOffset()));
+        // SQLToken 后面的字符串
         int beginPosition = offsetToken.getBeginPosition() + String.valueOf(offsetToken.getOffset()).length();
         int endPosition = sqlTokens.size() - 1 == count ? originalSQL.length() : sqlTokens.get(count + 1).getBeginPosition();
         sqlBuilder.appendLiterals(originalSQL.substring(beginPosition, endPosition));
     }
-    
+
+    /**
+     * 拼接 OrderByToken
+     *
+     * @param sqlBuilder SQL构建器
+     */
     private void appendOrderByToken(final SQLBuilder sqlBuilder) {
         SelectStatement selectStatement = (SelectStatement) sqlStatement;
+        // 拼接 OrderByToken
         StringBuilder orderByLiterals = new StringBuilder(" ORDER BY ");
         int i = 0;
         for (OrderItem each : selectStatement.getOrderByItems()) {

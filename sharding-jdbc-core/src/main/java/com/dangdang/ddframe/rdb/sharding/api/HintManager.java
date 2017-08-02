@@ -20,6 +20,7 @@ package com.dangdang.ddframe.rdb.sharding.api;
 import com.dangdang.ddframe.rdb.sharding.hint.HintManagerHolder;
 import com.dangdang.ddframe.rdb.sharding.hint.ShardingKey;
 import com.dangdang.ddframe.rdb.sharding.constant.ShardingOperator;
+import com.dangdang.ddframe.rdb.sharding.routing.type.hint.DatabaseHintRoutingEngine;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
@@ -39,17 +40,27 @@ import java.util.Map;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HintManager implements AutoCloseable {
-    
+
+    /**
+     * 库分片值集合
+     */
     private final Map<ShardingKey, ShardingValue<?>> databaseShardingValues = new HashMap<>();
     
     private final Map<ShardingKey, ShardingValue<?>> tableShardingValues = new HashMap<>();
-    
+
+    /**
+     * 是否分片暗示
+     */
     @Getter
     private boolean shardingHint;
     
     @Getter
     private boolean masterRouteOnly;
-    
+
+    /**
+     * 只做库分片
+     * {@link DatabaseHintRoutingEngine}
+     */
     @Getter
     private boolean databaseShardingOnly;
     

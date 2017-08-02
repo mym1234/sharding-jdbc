@@ -43,25 +43,36 @@ import java.util.Collections;
 @RequiredArgsConstructor
 @Slf4j
 public final class DatabaseHintRoutingEngine implements RoutingEngine {
-    
+
+    /**
+     * 数据源配置对象
+     */
     private final DataSourceRule dataSourceRule;
-    
+    /**
+     * 分库策略
+     */
     private final DatabaseShardingStrategy databaseShardingStrategy;
-    
+    /**
+     * SQL 类型
+     */
     private final SQLType sqlType;
     
     @Override
     public RoutingResult route() {
+        // 从 Hint 获得 分片键值
         Optional<ShardingValue<?>> shardingValue = HintManagerHolder.getDatabaseShardingValue(new ShardingKey(HintManagerHolder.DB_TABLE_NAME, HintManagerHolder.DB_COLUMN_NAME));
         Preconditions.checkState(shardingValue.isPresent());
         log.debug("Before database sharding only db:{} sharding values: {}", dataSourceRule.getDataSourceNames(), shardingValue.get());
+        // 路由。表分片规则使用的是 ShardingRule 里的。因为没 SQL 解析。
         Collection<String> routingDataSources = databaseShardingStrategy.doStaticSharding(sqlType, dataSourceRule.getDataSourceNames(), Collections.<ShardingValue<?>>singleton(shardingValue.get()));
         Preconditions.checkState(!routingDataSources.isEmpty(), "no database route info");
         log.debug("After database sharding only result: {}", routingDataSources);
+        // 路由结果
         RoutingResult result = new RoutingResult();
         for (String each : routingDataSources) {
             result.getTableUnits().getTableUnits().add(new TableUnit(each, "", ""));
         }
         return result;
     }
+
 }

@@ -177,7 +177,7 @@ public class MySQLSelectParser extends AbstractSelectParser {
         int offsetBeginPosition = getSqlParser().getLexer().getCurrentToken().getEndPosition();
         int offsetValue = -1;
         int offsetIndex = -1;
-        boolean isParameterForOffset = false;
+        boolean isParameterForOffset = false; // 是否是占位符
         if (getSqlParser().equalAny(Literals.INT)) {
             offsetValue = Integer.parseInt(getSqlParser().getLexer().getCurrentToken().getLiterals());
             offsetBeginPosition = offsetBeginPosition - (offsetValue + "").length();

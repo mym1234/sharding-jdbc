@@ -212,11 +212,18 @@ public final class ShardingRule {
         if (!bindingTableRule.isPresent()) {
             return Collections.emptyList();
         }
+        // 交集
         Collection<String> result = new ArrayList<>(bindingTableRule.get().getAllLogicTables());
         result.retainAll(logicTables);
         return result;
     }
 
+    /**
+     * 获得包含<strong>任一</strong>在逻辑表名称集合的binding表配置的逻辑表名称集合
+     *
+     * @param logicTables 逻辑表名称集合
+     * @return binding表配置的逻辑表名称集合
+     */
     private Optional<BindingTableRule> findBindingTableRule(final Collection<String> logicTables) {
         for (String each : logicTables) {
             Optional<BindingTableRule> result = findBindingTableRule(each);
