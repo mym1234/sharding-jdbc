@@ -11,6 +11,7 @@
         <module>sharding-jdbc-config-parent</module>
         <module>sharding-jdbc-transaction-parent</module>
         <module>sharding-jdbc-example</module>
+        <module>sharding-jdbc-plugin</module>
     </modules>
     
     <properties>

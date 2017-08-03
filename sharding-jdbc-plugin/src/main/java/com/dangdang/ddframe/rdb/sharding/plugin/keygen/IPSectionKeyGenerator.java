@@ -57,12 +57,12 @@ public final class IPSectionKeyGenerator implements KeyGenerator {
         }
         byte[] ipAddressByteArray = address.getAddress();
         long workerId = 0L;
-        //IPV4
+        // IPV4
         if (ipAddressByteArray.length == 4) {
             for (byte byteNum : ipAddressByteArray) {
                 workerId += byteNum & 0xFF;
             }
-            //IPV6
+        // IPV6
         } else if (ipAddressByteArray.length == 16) {
             for (byte byteNum : ipAddressByteArray) {
                 workerId += byteNum & 0B111111;

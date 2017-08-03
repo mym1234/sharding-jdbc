@@ -46,7 +46,8 @@ public final class IPKeyGenerator implements KeyGenerator {
             throw new IllegalStateException("Cannot get LocalHost InetAddress, please check your network!");
         }
         byte[] ipAddressByteArray = address.getAddress();
-        DefaultKeyGenerator.setWorkerId((long) (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE) + (ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF)));
+        DefaultKeyGenerator.setWorkerId((long) (((ipAddressByteArray[ipAddressByteArray.length - 2] & 0B11) << Byte.SIZE)
+                + (ipAddressByteArray[ipAddressByteArray.length - 1] & 0xFF)));
     }
     
     @Override
