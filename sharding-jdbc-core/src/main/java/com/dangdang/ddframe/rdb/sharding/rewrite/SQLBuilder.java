@@ -73,7 +73,7 @@ public final class SQLBuilder {
     /**
      * 生成SQL语句.
      *
-     * @param tableTokens 占位符集合
+     * @param tableTokens 占位符集合（逻辑表与真实表映射）
      * @return SQL语句
      */
     public String toSQL(final Map<String, String> tableTokens) {

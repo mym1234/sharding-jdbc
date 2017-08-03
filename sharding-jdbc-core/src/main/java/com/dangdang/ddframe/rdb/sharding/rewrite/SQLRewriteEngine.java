@@ -241,21 +241,35 @@ public final class SQLRewriteEngine {
     public String generateSQL(final CartesianTableReference cartesianTableReference, final SQLBuilder sqlBuilder) {
         return sqlBuilder.toSQL(getTableTokens(cartesianTableReference));
     }
-    
+
+    /**
+     * 获得（路由表单元逻辑表 和 与其互为BindingTable关系的逻辑表）对应的真实表映射（逻辑表需要在 SQL 中存在）
+     *
+     * @param tableUnit 路由表单元
+     * @return 集合
+     */
     private Map<String, String> getTableTokens(final TableUnit tableUnit) {
         Map<String, String> tableTokens = new HashMap<>();
         tableTokens.put(tableUnit.getLogicTableName(), tableUnit.getActualTableName());
         Optional<BindingTableRule> bindingTableRule = shardingRule.findBindingTableRule(tableUnit.getLogicTableName());
+        // 查找 BindingTableRule
         if (bindingTableRule.isPresent()) {
             tableTokens.putAll(getBindingTableTokens(tableUnit, bindingTableRule.get()));
         }
         return tableTokens;
     }
-    
+
+    /**
+     * 获得（笛卡尔积表路由组里的路由表单元逻辑表 和 与其互为BindingTable关系的逻辑表）对应的真实表映射（逻辑表需要在 SQL 中存在）
+     *
+     * @param cartesianTableReference 笛卡尔积表路由组
+     * @return 集合
+     */
     private Map<String, String> getTableTokens(final CartesianTableReference cartesianTableReference) {
         Map<String, String> tableTokens = new HashMap<>();
         for (TableUnit each : cartesianTableReference.getTableUnits()) {
             tableTokens.put(each.getLogicTableName(), each.getActualTableName());
+            // 查找 BindingTableRule
             Optional<BindingTableRule> bindingTableRule = shardingRule.findBindingTableRule(each.getLogicTableName());
             if (bindingTableRule.isPresent()) {
                 tableTokens.putAll(getBindingTableTokens(each, bindingTableRule.get()));
@@ -263,7 +277,14 @@ public final class SQLRewriteEngine {
         }
         return tableTokens;
     }
-    
+
+    /**
+     * 获得 BindingTable 关系的逻辑表对应的真实表映射（逻辑表需要在 SQL 中存在）
+     *
+     * @param tableUnit 路由单元
+     * @param bindingTableRule Binding表规则配置对象
+     * @return 映射
+     */
     private Map<String, String> getBindingTableTokens(final TableUnit tableUnit, final BindingTableRule bindingTableRule) {
         Map<String, String> result = new HashMap<>();
         for (String eachTable : sqlStatement.getTables().getTableNames()) {

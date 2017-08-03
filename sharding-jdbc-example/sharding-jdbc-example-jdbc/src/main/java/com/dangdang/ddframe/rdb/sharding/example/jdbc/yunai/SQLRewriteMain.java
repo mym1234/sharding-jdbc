@@ -55,21 +55,25 @@ public class SQLRewriteMain {
      */
     public static void testMultiDbMultiTable3() throws SQLException {
 
-        SingleKeyDatabaseShardingAlgorithm databaseShardingAlgorithm = new SingleKeyDatabaseShardingAlgorithm<Long>() {
+        SingleKeyDatabaseShardingAlgorithm databaseShardingAlgorithm = new SingleKeyDatabaseShardingAlgorithm<Integer>() {
 
             @Override
-            public String doEqualSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+            public String doEqualSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
+                int value = 0;
+                if (shardingValue.getValue() instanceof Number) {
+                    value = ((Number) shardingValue.getValue()).intValue();
+                }
                 List<String> list = new ArrayList<>(availableTargetNames);
-                return list.get(shardingValue.getValue().intValue() % list.size());
+                return list.get(value % list.size());
             }
 
             @Override
-            public Collection<String> doInSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+            public Collection<String> doInSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
                 return null;
             }
 
             @Override
-            public Collection<String> doBetweenSharding(Collection<String> availableTargetNames, ShardingValue<Long> shardingValue) {
+            public Collection<String> doBetweenSharding(Collection<String> availableTargetNames, ShardingValue<Integer> shardingValue) {
                 return null;
             }
         };
@@ -102,7 +106,10 @@ public class SQLRewriteMain {
                 .dataSourceRule(new DataSourceRule(buildDataSourceRule2("multi_db_multi_table_01", "multi_db_multi_table_02")))
 
                 .databaseShardingStrategy(new DatabaseShardingStrategy("user_id", databaseShardingAlgorithm))
-                .tableShardingStrategy(new TableShardingStrategy("order_id", tableShardingAlgorithm))
+                .tableShardingStrategy(new TableShardingStrategy("user_id", tableShardingAlgorithm))
+
+                .generateKeyColumn("order_id")
+
                 .build();
 
         TableRule rule2 = TableRule
@@ -124,7 +131,7 @@ public class SQLRewriteMain {
         ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
         // 执行
         Connection conn = dataSource.getConnection();
-        int type = 201;
+        int type = 100;
         String sql = "";
         if (type == 100) { // TableToken
 //            sql = "SELECT * FROM t_order o";
@@ -165,6 +172,34 @@ public class SQLRewriteMain {
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setInt(1, 10);
             ps.executeQuery();
+        } else if (type == 400) { // 插入 + 空
+            sql = "INSERT INTO t_order(user_id) VALUES (1)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.execute();
+        } else if (type == 401) { // 插入 + 占位符
+            sql = "INSERT INTO t_order(order_id, user_id) VALUES (?, 1)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setLong(1, 100);
+            ps.execute();
+        } else if (type == 402) { // 插入 + 数字
+            sql = "INSERT INTO t_order(order_id, user_id) VALUES (100, 1)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.execute();
+        } else if (type == 403) { // 插入 + 数字 + 有其他占位符
+            sql = "INSERT INTO t_order(order_id, user_id) VALUES (100, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setLong(1, 1);
+            ps.execute();
+        } else if (type == 404) { // 插入 + 占位 + 有占位符
+            sql = "INSERT INTO t_order(user_id) VALUES (?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setLong(1, 1);
+            ps.execute();
+        } else if (type == 405) { // 插入 + 占位符（不设置）
+            sql = "INSERT INTO t_order(order_id, user_id, nickname) VALUES (?, 1, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(2, "nickname");
+            ps.execute();
         }
 //        try (
 //             ) {

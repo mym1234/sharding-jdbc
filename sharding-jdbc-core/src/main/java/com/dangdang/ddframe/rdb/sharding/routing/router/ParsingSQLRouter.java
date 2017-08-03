@@ -73,7 +73,7 @@ public final class ParsingSQLRouter implements SQLRouter {
         SQLParsingEngine parsingEngine = new SQLParsingEngine(databaseType, logicSQL, shardingRule);
         Context context = MetricsContext.start("Parse SQL");
         SQLStatement result = parsingEngine.parse();
-        if (result instanceof InsertStatement) {
+        if (result instanceof InsertStatement) { // 处理 GenerateKeyToken
             ((InsertStatement) result).appendGenerateKeyToken(shardingRule, parametersSize);
         }
         MetricsContext.stop(context);
@@ -148,14 +148,14 @@ public final class ParsingSQLRouter implements SQLRouter {
      */
     private void processGeneratedKey(final List<Object> parameters, final InsertStatement insertStatement, final SQLRouteResult sqlRouteResult) {
         GeneratedKey generatedKey = insertStatement.getGeneratedKey();
-        if (parameters.isEmpty()) { // 无占位符，INSERT INTO t_order(order_id, user_id) VALUES (1, 100);
+        if (parameters.isEmpty()) { // 已有主键，无占位符，INSERT INTO t_order(order_id, user_id) VALUES (1, 100);
             sqlRouteResult.getGeneratedKeys().add(generatedKey.getValue());
         } else if (parameters.size() == generatedKey.getIndex()) { // 主键字段不存在存在，INSERT INTO t_order(user_id) VALUES(?);
             Number key = shardingRule.generateKey(insertStatement.getTables().getSingleTableName()); // 生成主键编号
             parameters.add(key);
             setGeneratedKeys(sqlRouteResult, key);
         } else if (-1 != generatedKey.getIndex()) { // 主键字段存在，INSERT INTO t_order(order_id, user_id) VALUES(?, ?);
-            setGeneratedKeys(sqlRouteResult, (Number) parameters.get(generatedKey.getIndex())); // 生成主键编号
+            setGeneratedKeys(sqlRouteResult, (Number) parameters.get(generatedKey.getIndex()));
         }
     }
 

@@ -61,6 +61,7 @@ public final class BindingTableRule {
      * @return 真实Binding表名称
      */
     public String getBindingActualTable(final String dataSource, final String logicTable, final String otherActualTable) {
+        // 计算 otherActualTable 在其 TableRule 的 actualTable 是第几个
         int index = -1;
         for (TableRule each : tableRules) {
             if (each.isDynamic()) {
@@ -72,6 +73,7 @@ public final class BindingTableRule {
             }
         }
         Preconditions.checkState(-1 != index, String.format("Actual table [%s].[%s] is not in table config", dataSource, otherActualTable));
+        // 计算 logicTable 在其 TableRule 的 第index 的 真实表
         for (TableRule each : tableRules) {
             if (each.getLogicTable().equalsIgnoreCase(logicTable)) {
                 return each.getActualTables().get(index).getTableName();
