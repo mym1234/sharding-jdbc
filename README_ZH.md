@@ -1,55 +1,53 @@
-+++
-toc = true
-date = "2016-12-06T22:38:50+08:00"
-title = "简介"
-weight = 1
-prev = "/00-overview"
-next = "/00-overview/contribution/"
+# Sharding-JDBC - 为分库分表而生的数据库访问层微服务框架 
 
-+++
+[![Build Status](https://secure.travis-ci.org/dangdangdotcom/sharding-jdbc.png?branch=master)](https://travis-ci.org/dangdangdotcom/sharding-jdbc)
+[![Maven Status](https://maven-badges.herokuapp.com/maven-central/com.dangdang/sharding-jdbc/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.dangdang/sharding-jdbc)
+[![Coverage Status](https://coveralls.io/repos/dangdangdotcom/sharding-jdbc/badge.svg?branch=master&service=github)](https://coveralls.io/github/dangdangdotcom/sharding-jdbc?branch=master)
+[![GitHub release](https://img.shields.io/github/release/dangdangdotcom/sharding-jdbc.svg)](https://github.com/dangdangdotcom/sharding-jdbc/releases)
+[![Hex.pm](http://dangdangdotcom.github.io/sharding-jdbc/img/license.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-Sharding-JDBC直接封装JDBC API，可以理解为增强版的JDBC驱动，旧代码迁移成本几乎为零：
+# 概述
 
-* 可适用于任何基于java的ORM框架，如：JPA, Hibernate, Mybatis, Spring JDBC Template或直接使用JDBC。
-* 可基于任何第三方的数据库连接池，如：DBCP, C3P0, BoneCP, Druid等。
-* 理论上可支持任意实现JDBC规范的数据库。目前支持MySQL，Oracle，SQLServer和PostgreSQL。
+Sharding-JDBC定位为轻量级java框架，使用客户端直连数据库，以jar包形式提供服务，未使用中间层，无需额外部署，无其他依赖，DBA也无需改变原有的运维方式，可理解为增强版的JDBC驱动，旧代码迁移成本几乎为零。
 
-Sharding-JDBC定位为轻量级java框架，使用客户端直连数据库，以jar包形式提供服务，未使用中间层，无需额外部署，无其他依赖，DBA也无需改变原有的运维方式。SQL解析使用Druid解析器，是目前性能最高的SQL解析器。
+# 功能列表
 
-Sharding-JDBC功能灵活且全面：
+## 1. 分库分表
+* SQL解析功能完善，支持聚合，分组，排序，LIMIT，OR等查询，并且支持级联表以及笛卡尔积的表查询
+* 支持内、外连接查询
+* 分片策略灵活，可支持=，BETWEEN，IN等多维度分片，也可支持多分片键共用，以及自定义分片策略
+* 基于Hint的强制分库分表路由
 
-* 分片策略灵活，可支持=，BETWEEN，IN等多维度分片，也可支持多分片键共用。
-* SQL解析功能完善，支持聚合，分组，排序，Limit等查询，并且支持Binding Table以及笛卡尔积的表查询。
-* 支持柔性事务(目前仅最大努力送达型)。
-* 支持读写分离。
-* 支持分布式生成全局主键。
+## 2. 读写分离
+* 一主多从的读写分离配置，可配合分库分表使用
+* 基于Hint的强制主库路由
 
-Sharding-JDBC配置多样：
+## 3. 分布式事务
+* 最大努力送达型事务
+* TCC型事务(TBD)
 
-* 可支持YAML和Spring命名空间配置
-* 灵活多样的inline方式
+## 4. 兼容性
+* 可适用于任何基于java的ORM框架，如：JPA, Hibernate, Mybatis, Spring JDBC Template或直接使用JDBC
+* 可基于任何第三方的数据库连接池，如：DBCP, C3P0, BoneCP, Druid等
+* 理论上可支持任意实现JDBC规范的数据库。目前支持MySQL，Oracle，SQLServer和PostgreSQL
 
-***
+## 5. 灵活多样的配置
+* Java
+* Spring命名空间
+* YAML
+* Inline表达式
 
-以下是常见的分库分表产品和Sharding-JDBC的对比：
+## 6. 分布式生成全局主键
+* 统一的分布式基于时间序列的ID生成器
 
-| 功能          | Cobar         | Cobar-client  | TDDL        | Sharding-JDBC  |
-| ------------- |:-------------:| -------------:| -----------:|---------------:|
-| 分库          | 有            | 有             | 未开源      | 有              |
-| 分表          | 无            | 无             | 未开源      | 有              |
-| 中间层        | 是            | 否             | 否          | 否              |
-| ORM支持       | 任意          | 仅MyBatis      | 任意        | 任意            |
-| 数据库支持     | 仅MySQL       | 任意           | 任意        | 任意            |
-| 异构语言       | 可           | 仅Java          | 仅Java     | 仅Java          |
-| 外部依赖       | 无           | 无              | Diamond    | 无              |
+# Architecture
 
-***
+![Architecture](http://dangdangdotcom.github.io/sharding-jdbc/img/architecture.png)
 
-# 整体架构图
+# [Release Notes](https://github.com/dangdangdotcom/sharding-jdbc/releases)
 
-![整体架构图](/img/architecture.png)
+# [Roadmap](ROADMAP.md)
 
-![柔性事务-最大努力送达型]( /img/architecture-soft-transaction-bed.png)
 
 # 快速入门
 

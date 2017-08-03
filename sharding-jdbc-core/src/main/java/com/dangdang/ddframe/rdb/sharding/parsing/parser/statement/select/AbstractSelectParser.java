@@ -73,24 +73,12 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
     public final SelectStatement parse() {
         query();
         parseOrderBy();
-        customizedSelect();
         appendDerivedColumns();
         appendDerivedOrderBy();
         return selectStatement;
     }
-    
-    protected void customizedSelect() {
-    }
-    
-    protected void query() {
-        sqlParser.accept(DefaultKeyword.SELECT);
-        parseDistinct();
-        parseSelectList();
-        parseFrom();
-        parseWhere();
-        parseGroupBy();
-        queryRest();
-    }
+
+    protected abstract void query();
 
     /**
      * 解析 DISTINCT、DISTINCTROW、UNION、ALL
@@ -241,7 +229,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         do {
             // 解析单个 OrderBy
             Optional<OrderItem> orderItem = parseSelectOrderByItem();
-            if (orderItem.isPresent()) {
+            if (orderItem.isPresent() && !selectStatement.isContainSubQuery()) {
                 result.add(orderItem.get());
             }
         }
@@ -334,7 +322,9 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
         } else {
             return;
         }
-        selectStatement.getGroupByItems().add(orderItem);
+        if (!selectStatement.isContainSubQuery()) {
+            selectStatement.getGroupByItems().add(orderItem);
+        }
     }
 
     /**
@@ -377,6 +367,7 @@ public abstract class AbstractSelectParser implements SQLStatementParser {
             if (!selectStatement.getTables().isEmpty()) {
                 throw new UnsupportedOperationException("Cannot support subquery for nested tables.");
             }
+            selectStatement.setContainSubQuery(true);
             selectStatement.setContainStar(false); // TODO 疑问
             // 去掉子查询左括号
             sqlParser.skipUselessParentheses();

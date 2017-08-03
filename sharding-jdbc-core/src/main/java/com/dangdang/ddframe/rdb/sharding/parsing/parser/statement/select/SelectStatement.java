@@ -52,6 +52,10 @@ public final class SelectStatement extends AbstractSQLStatement {
      */
     private boolean containStar;
     /**
+     * TODO 待研究
+     */
+    private boolean containSubQuery;
+    /**
      * 最后一个查询项下一个 Token 的开始位置
      *
      * @see #items
