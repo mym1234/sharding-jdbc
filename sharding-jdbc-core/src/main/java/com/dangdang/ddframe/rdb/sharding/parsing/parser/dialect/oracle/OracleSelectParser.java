@@ -32,17 +32,7 @@ public class OracleSelectParser extends AbstractSelectParser {
     public OracleSelectParser(final SQLParser sqlParser) {
         super(sqlParser);
     }
-    
-    @Override
-    protected void customizedSelect() {
-        if (getSqlParser().equalAny(DefaultKeyword.FOR)) {
-            skipForUpdate();
-        }
-        if (getSelectStatement().getOrderByItems().isEmpty()) {
-            parseOrderBy();
-        }
-    }
-    
+
     @Override
     public void query() {
         if (getSqlParser().equalAny(DefaultKeyword.SELECT)) {

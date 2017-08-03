@@ -120,16 +120,6 @@ public class SQLServerSelectParser extends AbstractSelectParser {
         super.parseJoinTable();
     }
     
-    @Override
-    protected void customizedSelect() {
-        if (getSqlParser().equalAny(DefaultKeyword.FOR)) {
-            parseFor();
-        }
-        if (getSqlParser().equalAny(SQLServerKeyword.OFFSET)) {
-            parseOffset();
-        }
-    }
-    
     private void parseOffset() {
         getSqlParser().getLexer().nextToken();
         int offsetValue = -1;
