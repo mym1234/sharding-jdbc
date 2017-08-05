@@ -27,8 +27,19 @@ import java.sql.Statement;
  * @author zhangliang
  */
 public interface BaseStatementUnit {
-    
+
+    /**
+     * 获得 SQL 执行单元
+     *
+     * @return SQL 执行单元
+     */
     SQLExecutionUnit getSqlExecutionUnit();
-    
+
+    /**
+     * Statement
+     *
+     * @return Statement
+     */
     Statement getStatement();
+    
 }

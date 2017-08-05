@@ -64,8 +64,9 @@ public final class ExecutorEngine implements AutoCloseable {
     
     public ExecutorEngine(final int executorSize) {
         executorService = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
-                executorSize, executorSize, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("ShardingJDBC-%d").build()));
-        MoreExecutors.addDelayedShutdownHook(executorService, 60, TimeUnit.SECONDS);
+                executorSize, executorSize, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
+                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("ShardingJDBC-%d").build()));
+        MoreExecutors.addDelayedShutdownHook(executorService, 60, TimeUnit.SECONDS); // TODO 疑问：会执行到么？数据
     }
     
     /**
@@ -109,7 +110,17 @@ public final class ExecutorEngine implements AutoCloseable {
             final SQLType sqlType, final Collection<BatchPreparedStatementUnit> batchPreparedStatementUnits, final List<List<Object>> parameterSets, final ExecuteCallback<int[]> executeCallback) {
         return execute(sqlType, batchPreparedStatementUnits, parameterSets, executeCallback);
     }
-    
+
+    /**
+     * 执行
+     *
+     * @param sqlType SQL 类型
+     * @param baseStatementUnits 语句对象执行单元集合
+     * @param parameterSets 参数列表集
+     * @param executeCallback 执行回调函数
+     * @param <T> 返回值类型
+     * @return 执行结果
+     */
     private  <T> List<T> execute(
             final SQLType sqlType, final Collection<? extends BaseStatementUnit> baseStatementUnits, final List<List<Object>> parameterSets, final ExecuteCallback<T> executeCallback) {
         if (baseStatementUnits.isEmpty()) {
@@ -117,11 +128,14 @@ public final class ExecutorEngine implements AutoCloseable {
         }
         Iterator<? extends BaseStatementUnit> iterator = baseStatementUnits.iterator();
         BaseStatementUnit firstInput = iterator.next();
+        // 第二个任务开始所有 SQL任务 提交线程池【异步】执行任务
         ListenableFuture<List<T>> restFutures = asyncExecute(sqlType, Lists.newArrayList(iterator), parameterSets, executeCallback);
         T firstOutput;
         List<T> restOutputs;
         try {
+            // 第一个任务【同步】执行任务
             firstOutput = syncExecute(sqlType, firstInput, parameterSets, executeCallback);
+            // 等待第二个任务开始所有 SQL任务完成
             restOutputs = restFutures.get();
             //CHECKSTYLE:OFF
         } catch (final Exception ex) {
@@ -129,59 +143,71 @@ public final class ExecutorEngine implements AutoCloseable {
             ExecutorExceptionHandler.handleException(ex);
             return null;
         }
+        // 返回结果
         List<T> result = Lists.newLinkedList(restOutputs);
         result.add(0, firstOutput);
         return result;
     }
-    
+
     private <T> ListenableFuture<List<T>> asyncExecute(
             final SQLType sqlType, final Collection<BaseStatementUnit> baseStatementUnits, final List<List<Object>> parameterSets, final ExecuteCallback<T> executeCallback) {
         List<ListenableFuture<T>> result = new ArrayList<>(baseStatementUnits.size());
         final boolean isExceptionThrown = ExecutorExceptionHandler.isExceptionThrown();
         final Map<String, Object> dataMap = ExecutorDataMap.getDataMap();
         for (final BaseStatementUnit each : baseStatementUnits) {
+            // 提交线程池【异步】执行任务
             result.add(executorService.submit(new Callable<T>() {
-                
+
                 @Override
                 public T call() throws Exception {
                     return executeInternal(sqlType, each, parameterSets, executeCallback, isExceptionThrown, dataMap);
                 }
             }));
         }
+        // 返回 ListenableFuture
         return Futures.allAsList(result);
     }
-    
+
     private <T> T syncExecute(final SQLType sqlType, final BaseStatementUnit baseStatementUnit, final List<List<Object>> parameterSets, final ExecuteCallback<T> executeCallback) throws Exception {
+        // 【同步】执行任务
         return executeInternal(sqlType, baseStatementUnit, parameterSets, executeCallback, ExecutorExceptionHandler.isExceptionThrown(), ExecutorDataMap.getDataMap());
     }
     
     private <T> T executeInternal(final SQLType sqlType, final BaseStatementUnit baseStatementUnit, final List<List<Object>> parameterSets, final ExecuteCallback<T> executeCallback, 
                           final boolean isExceptionThrown, final Map<String, Object> dataMap) throws Exception {
-        synchronized (baseStatementUnit.getStatement().getConnection()) {
+        synchronized (baseStatementUnit.getStatement().getConnection()) { // 可能拿到相同的 Connection，同步避免冲突
+//            System.out.println(baseStatementUnit.getStatement().getConnection() + "\t" + baseStatementUnit.getSqlExecutionUnit().getSql());
+
             T result;
             ExecutorExceptionHandler.setExceptionThrown(isExceptionThrown);
             ExecutorDataMap.setDataMap(dataMap);
             List<AbstractExecutionEvent> events = new LinkedList<>();
+            // 生成 Event
             if (parameterSets.isEmpty()) {
                 events.add(getExecutionEvent(sqlType, baseStatementUnit, Collections.emptyList()));
+            } else {
+                for (List<Object> each : parameterSets) {
+                    events.add(getExecutionEvent(sqlType, baseStatementUnit, each));
+                }
             }
-            for (List<Object> each : parameterSets) {
-                events.add(getExecutionEvent(sqlType, baseStatementUnit, each));
-            }
+            // EventBus 发布 EventExecutionType.BEFORE_EXECUTE
             for (AbstractExecutionEvent event : events) {
                 EventBusInstance.getInstance().post(event);
             }
             try {
+                // 执行回调函数
                 result = executeCallback.execute(baseStatementUnit);
             } catch (final SQLException ex) {
+                // EventBus 发布 EventExecutionType.EXECUTE_FAILURE
                 for (AbstractExecutionEvent each : events) {
                     each.setEventExecutionType(EventExecutionType.EXECUTE_FAILURE);
                     each.setException(Optional.of(ex));
                     EventBusInstance.getInstance().post(each);
-                    ExecutorExceptionHandler.handleException(ex);
+                    ExecutorExceptionHandler.handleException(ex); // TODO 疑问：如果多个任务，只发一个执行异常么？
                 }
                 return null;
             }
+            // EventBus 发布 EventExecutionType.EXECUTE_SUCCESS
             for (AbstractExecutionEvent each : events) {
                 each.setEventExecutionType(EventExecutionType.EXECUTE_SUCCESS);
                 EventBusInstance.getInstance().post(each);

@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 多线程执行批量预编译语句对象请求的执行器.
+ * 多线程执行批量预编译语句对象请求的执行器. // TODO 疑问： BatchStatementExecutor 为啥不支持
  * 
  * @author zhangliang
  */
@@ -64,10 +64,17 @@ public final class BatchPreparedStatementExecutor {
             MetricsContext.stop(context);
         }
     }
-    
+
+    /**
+     * 计算每个语句的更新数量
+     *
+     * @param results 每条 SQL 更新数量
+     * @return 每个语句的更新数量
+     */
     private int[] accumulate(final List<int[]> results) {
         int[] result = new int[parameterSets.size()];
         int count = 0;
+        // 每个语句按照顺序，读取到其对应的每个分片SQL影响的行数进行累加
         for (BatchPreparedStatementUnit each : batchPreparedStatementUnits) {
             for (Map.Entry<Integer, Integer> entry : each.getJdbcAndActualAddBatchCallTimesMap().entrySet()) {
                 result[entry.getKey()] += null == results.get(count) ? 0 : results.get(count)[entry.getValue()];

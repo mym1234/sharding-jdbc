@@ -39,7 +39,7 @@ import java.util.List;
  * @author zhangliang
  */
 @RequiredArgsConstructor
-public final class StatementExecutor {
+    public final class StatementExecutor {
     
     private final ExecutorEngine executorEngine;
     
@@ -129,7 +129,13 @@ public final class StatementExecutor {
             MetricsContext.stop(context);
         }
     }
-    
+
+    /**
+     * 计算总的更新数量
+     *
+     * @param results 更新数量数组
+     * @return 更新数量
+     */
     private int accumulate(final List<Integer> results) {
         int result = 0;
         for (Integer each : results) {
