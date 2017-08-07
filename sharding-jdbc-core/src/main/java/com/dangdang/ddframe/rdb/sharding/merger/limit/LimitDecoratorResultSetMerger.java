@@ -35,11 +35,11 @@ public final class LimitDecoratorResultSetMerger extends AbstractDecoratorResult
      */
     private final Limit limit;
     /**
-     *
+     * 是否全部记录都跳过了，即无符合条件记录
      */
     private final boolean skipAll;
     /**
-     * 返回数据行数
+     * 当前已返回行数
      */
     private int rowNumber;
     
@@ -50,11 +50,13 @@ public final class LimitDecoratorResultSetMerger extends AbstractDecoratorResult
     }
     
     private boolean skipOffset() throws SQLException {
+        // 跳过 skip 记录
         for (int i = 0; i < limit.getOffsetValue(); i++) {
             if (!getResultSetMerger().next()) {
                 return true;
             }
         }
+        // 行数
         rowNumber = limit.isRowCountRewriteFlag() ? 0 : limit.getOffsetValue();
         return false;
     }
@@ -64,9 +66,12 @@ public final class LimitDecoratorResultSetMerger extends AbstractDecoratorResult
         if (skipAll) {
             return false;
         }
+        // 获得下一条记录
         if (limit.getRowCountValue() > -1) {
             return ++rowNumber <= limit.getRowCountValue() && getResultSetMerger().next();
         }
+        // 部分db 可以直 offset，不写 limit 行数，例如 oracle
         return getResultSetMerger().next();
     }
+
 }

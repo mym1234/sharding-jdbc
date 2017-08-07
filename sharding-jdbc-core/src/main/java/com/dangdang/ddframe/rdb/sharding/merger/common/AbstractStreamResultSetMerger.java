@@ -35,7 +35,10 @@ import java.util.Calendar;
 @SuppressWarnings("Duplicates")
 @Setter
 public abstract class AbstractStreamResultSetMerger implements ResultSetMerger {
-    
+
+    /**
+     * 当前结果集
+     */
     private ResultSet currentResultSet;
     
     protected ResultSet getCurrentResultSet() throws SQLException {

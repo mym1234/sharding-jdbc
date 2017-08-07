@@ -94,7 +94,7 @@ public final class MergeEngine {
     }
     
     private ResultSetMerger build() throws SQLException {
-        if (!selectStatement.getGroupByItems().isEmpty() || !selectStatement.getAggregationSelectItems().isEmpty()) {
+        if (!selectStatement.getGroupByItems().isEmpty() || !selectStatement.getAggregationSelectItems().isEmpty()) { // 分组 或 聚合列
             if (selectStatement.isSameGroupByAndOrderByItems()) {
                 return new GroupByStreamResultSetMerger(columnLabelIndexMap, resultSets, selectStatement, getNullOrderType());
             } else {

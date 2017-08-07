@@ -93,9 +93,11 @@ public final class GroupByMemoryResultSetMerger extends AbstractMemoryResultSetM
     
     private void initForFirstGroupByValue(final ResultSet resultSet, final GroupByValue groupByValue, final Map<GroupByValue, MemoryResultSetRow> dataMap, 
                                           final Map<GroupByValue, Map<AggregationSelectItem, AggregationUnit>> aggregationMap) throws SQLException {
+        // 初始化分组条件到 dataMap
         if (!dataMap.containsKey(groupByValue)) {
             dataMap.put(groupByValue, new MemoryResultSetRow(resultSet));
         }
+        // 初始化分组条件到 aggregationMap
         if (!aggregationMap.containsKey(groupByValue)) {
             Map<AggregationSelectItem, AggregationUnit> map = Maps.toMap(selectStatement.getAggregationSelectItems(), new Function<AggregationSelectItem, AggregationUnit>() {
                 
@@ -129,8 +131,8 @@ public final class GroupByMemoryResultSetMerger extends AbstractMemoryResultSetM
     }
     
     private void setAggregationValueToMemoryRow(final Map<GroupByValue, MemoryResultSetRow> dataMap, final Map<GroupByValue, Map<AggregationSelectItem, AggregationUnit>> aggregationMap) {
-        for (Entry<GroupByValue, MemoryResultSetRow> entry : dataMap.entrySet()) {
-            for (AggregationSelectItem each : selectStatement.getAggregationSelectItems()) {
+        for (Entry<GroupByValue, MemoryResultSetRow> entry : dataMap.entrySet()) { // 遍 历内存记录
+            for (AggregationSelectItem each : selectStatement.getAggregationSelectItems()) { // 遍历 每个聚合列
                 entry.getValue().setCell(each.getIndex(), aggregationMap.get(entry.getKey()).get(each).getResult());
             }
         }
