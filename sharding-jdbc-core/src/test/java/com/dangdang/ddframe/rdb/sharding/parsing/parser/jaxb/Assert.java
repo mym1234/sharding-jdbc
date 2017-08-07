@@ -38,6 +38,9 @@ public final class Assert {
     @XmlAttribute
     private String sql;
     
+    @XmlAttribute(name = "type")
+    private String types;
+    
     @XmlElement(name = "tables") 
     private Tables tables;
     
