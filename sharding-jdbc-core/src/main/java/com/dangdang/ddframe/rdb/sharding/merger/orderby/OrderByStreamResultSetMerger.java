@@ -36,14 +36,23 @@ import java.util.Queue;
  */
 @Getter(AccessLevel.PROTECTED)
 public class OrderByStreamResultSetMerger extends AbstractStreamResultSetMerger {
-    
+
+    /**
+     * 排序列
+     */
     @Getter(AccessLevel.NONE)
     private final List<OrderItem> orderByItems;
-    
+    /**
+     * 排序值对象队列
+     */
     private final Queue<OrderByValue> orderByValuesQueue;
-    
+    /**
+     * 默认排序类型
+     */
     private final OrderType nullOrderType;
-    
+    /**
+     *
+     */
     private boolean isFirstNext;
     
     public OrderByStreamResultSetMerger(final List<ResultSet> resultSets, final List<OrderItem> orderByItems, final OrderType nullOrderType) throws SQLException {

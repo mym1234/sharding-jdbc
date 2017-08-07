@@ -40,24 +40,41 @@ import java.util.TreeMap;
  * @author zhangliang
  */
 public final class MergeEngine {
-    
+
+    /**
+     * 数据库类型
+     */
     private final DatabaseType databaseType;
-    
+    /**
+     * 结果集集合
+     */
     private final List<ResultSet> resultSets;
-    
+    /**
+     * Select SQL语句对象
+     */
     private final SelectStatement selectStatement;
-    
+    /**
+     * 查询列名与位置映射
+     */
     private final Map<String, Integer> columnLabelIndexMap;
     
     public MergeEngine(final DatabaseType databaseType, final List<ResultSet> resultSets, final SelectStatement selectStatement) throws SQLException {
         this.databaseType = databaseType;
         this.resultSets = resultSets;
         this.selectStatement = selectStatement;
+        // 获得 查询列名与位置映射
         columnLabelIndexMap = getColumnLabelIndexMap(resultSets.get(0));
     }
-    
+
+    /**
+     * 获得 查询列名与位置映射
+     *
+     * @param resultSet 结果集
+     * @return 查询列名与位置映射
+     * @throws SQLException 当结果集已经关闭
+     */
     private Map<String, Integer> getColumnLabelIndexMap(final ResultSet resultSet) throws SQLException {
-        ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+        ResultSetMetaData resultSetMetaData = resultSet.getMetaData(); // 元数据（包含查询列信息）
         Map<String, Integer> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
             result.put(SQLUtil.getExactlyValue(resultSetMetaData.getColumnLabel(i)), i);
