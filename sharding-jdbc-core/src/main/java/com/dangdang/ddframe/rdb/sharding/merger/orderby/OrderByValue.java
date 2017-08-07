@@ -37,14 +37,24 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 public final class OrderByValue implements Comparable<OrderByValue> {
-    
+
+    /**
+     * 已排序结果集
+     */
     @Getter
     private final ResultSet resultSet;
-    
+    /**
+     * 排序列
+     */
     private final List<OrderItem> orderByItems;
-    
+    /**
+     * 默认排序类型
+     */
     private final OrderType nullOrderType;
-    
+    /**
+     * 排序列对应的值数组
+     * 因为一条记录可能有多个排序列，所以是数组
+     */
     private List<Comparable<?>> orderValues;
     
     /**
@@ -58,7 +68,13 @@ public final class OrderByValue implements Comparable<OrderByValue> {
         orderValues = result ? getOrderValues() : Collections.<Comparable<?>>emptyList();
         return result;
     }
-    
+
+    /**
+     * 获得 排序列对应的值数组
+     *
+     * @return 排序列对应的值数组
+     * @throws SQLException 当结果集关闭时
+     */
     private List<Comparable<?>> getOrderValues() throws SQLException {
         List<Comparable<?>> result = new ArrayList<>(orderByItems.size());
         for (OrderItem each : orderByItems) {
@@ -68,7 +84,13 @@ public final class OrderByValue implements Comparable<OrderByValue> {
         }
         return result;
     }
-    
+
+    /**
+     * 对比 {@link #orderValues}，即两者的第一条记录
+     *
+     * @param o 对比 OrderByValue
+     * @return -1 0 1
+     */
     @Override
     public int compareTo(final OrderByValue o) {
         for (int i = 0; i < orderByItems.size(); i++) {

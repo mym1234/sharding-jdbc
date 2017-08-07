@@ -44,11 +44,18 @@ import java.util.Map.Entry;
  * @author zhangliang
  */
 public final class GroupByMemoryResultSetMerger extends AbstractMemoryResultSetMerger {
-    
+
+    /**
+     * Select SQL语句对象
+     */
     private final SelectStatement selectStatement;
-    
+    /**
+     * 默认排序类型
+     */
     private final OrderType nullOrderType;
-    
+    /**
+     * 内存结果集
+     */
     private final Iterator<MemoryResultSetRow> memoryResultSetRows;
     
     public GroupByMemoryResultSetMerger(
@@ -60,17 +67,24 @@ public final class GroupByMemoryResultSetMerger extends AbstractMemoryResultSetM
     }
     
     private Iterator<MemoryResultSetRow> init(final List<ResultSet> resultSets) throws SQLException {
-        Map<GroupByValue, MemoryResultSetRow> dataMap = new HashMap<>(1024);
-        Map<GroupByValue, Map<AggregationSelectItem, AggregationUnit>> aggregationMap = new HashMap<>(1024);
+        Map<GroupByValue, MemoryResultSetRow> dataMap = new HashMap<>(1024); // 分组条件值与内存记录映射
+        Map<GroupByValue, Map<AggregationSelectItem, AggregationUnit>> aggregationMap = new HashMap<>(1024); // 分组条件值与聚合列映射
+        // 遍历结果集
         for (ResultSet each : resultSets) {
             while (each.next()) {
+                // 生成分组条件
                 GroupByValue groupByValue = new GroupByValue(each, selectStatement.getGroupByItems());
+                // 初始化分组条件到 dataMap、aggregationMap 映射
                 initForFirstGroupByValue(each, groupByValue, dataMap, aggregationMap);
+                // 归并聚合值
                 aggregate(each, groupByValue, aggregationMap);
             }
         }
+        // 设置聚合列结果到内存记录
         setAggregationValueToMemoryRow(dataMap, aggregationMap);
+        // 内存排序
         List<MemoryResultSetRow> result = getMemoryResultSetRows(dataMap);
+        // 设置当前 ResultSet，这样 #getValue() 能拿到记录
         if (!result.isEmpty()) {
             setCurrentResultSetRow(result.get(0));
         }
@@ -124,7 +138,7 @@ public final class GroupByMemoryResultSetMerger extends AbstractMemoryResultSetM
     
     private List<MemoryResultSetRow> getMemoryResultSetRows(final Map<GroupByValue, MemoryResultSetRow> dataMap) {
         List<MemoryResultSetRow> result = new ArrayList<>(dataMap.values());
-        Collections.sort(result, new GroupByRowComparator(selectStatement, nullOrderType));
+        Collections.sort(result, new GroupByRowComparator(selectStatement, nullOrderType)); // 内存排序
         return result;
     }
     

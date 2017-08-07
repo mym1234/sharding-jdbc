@@ -29,11 +29,18 @@ import java.sql.SQLException;
  * @author zhangliang
  */
 public final class LimitDecoratorResultSetMerger extends AbstractDecoratorResultSetMerger {
-    
+
+    /**
+     * 分页条件
+     */
     private final Limit limit;
-    
+    /**
+     *
+     */
     private final boolean skipAll;
-    
+    /**
+     * 返回数据行数
+     */
     private int rowNumber;
     
     public LimitDecoratorResultSetMerger(final ResultSetMerger resultSetMerger, final Limit limit) throws SQLException {

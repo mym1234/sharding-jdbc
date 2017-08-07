@@ -34,17 +34,28 @@ import java.util.List;
 @Getter
 @EqualsAndHashCode
 public final class GroupByValue {
-    
+
+    /**
+     * 分组条件值数组
+     */
     private final List<?> groupValues;
     
     public GroupByValue(final ResultSet resultSet, final List<OrderItem> groupByItems) throws SQLException {
         groupValues = getGroupByValues(resultSet, groupByItems);
     }
-    
+
+    /**
+     * 获得分组条件值数组
+     *
+     * @param resultSet 结果集（单分片）
+     * @param groupByItems 分组列
+     * @return 分组条件值数组
+     * @throws SQLException 当结果集关闭
+     */
     private List<?> getGroupByValues(final ResultSet resultSet, final List<OrderItem> groupByItems) throws SQLException {
         List<Object> result = new ArrayList<>(groupByItems.size());
         for (OrderItem each : groupByItems) {
-            result.add(resultSet.getObject(each.getIndex()));
+            result.add(resultSet.getObject(each.getIndex())); // 从结果集获得每个分组条件的值
         }
         return result;
     }

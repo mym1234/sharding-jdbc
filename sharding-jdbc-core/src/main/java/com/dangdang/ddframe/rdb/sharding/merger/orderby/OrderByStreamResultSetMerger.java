@@ -51,7 +51,7 @@ public class OrderByStreamResultSetMerger extends AbstractStreamResultSetMerger 
      */
     private final OrderType nullOrderType;
     /**
-     *
+     * 是否第一个 ResultSet 已经调用 #next()
      */
     private boolean isFirstNext;
     
@@ -70,6 +70,7 @@ public class OrderByStreamResultSetMerger extends AbstractStreamResultSetMerger 
                 orderByValuesQueue.offer(orderByValue);
             }
         }
+        // 设置当前 ResultSet，这样 #getValue() 能拿到记录
         setCurrentResultSet(orderByValuesQueue.isEmpty() ? resultSets.get(0) : orderByValuesQueue.peek().getResultSet());
     }
     
@@ -82,13 +83,16 @@ public class OrderByStreamResultSetMerger extends AbstractStreamResultSetMerger 
             isFirstNext = false;
             return true;
         }
+        // 移除上一次获得的 ResultSet
         OrderByValue firstOrderByValue = orderByValuesQueue.poll();
+        // 如果上一次获得的 ResultSet还有下一条记录，继续添加到 排序值对象队列
         if (firstOrderByValue.next()) {
             orderByValuesQueue.offer(firstOrderByValue);
         }
         if (orderByValuesQueue.isEmpty()) {
             return false;
         }
+        // 设置当前 ResultSet
         setCurrentResultSet(orderByValuesQueue.peek().getResultSet());
         return true;
     }

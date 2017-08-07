@@ -30,22 +30,28 @@ import java.util.List;
  * @author zhangliang
  */
 public final class IteratorStreamResultSetMerger extends AbstractStreamResultSetMerger {
-    
+
+    /**
+     * ResultSet 数组迭代器
+     */
     private final Iterator<ResultSet> resultSets;
-    
+
     public IteratorStreamResultSetMerger(final List<ResultSet> resultSets) {
         this.resultSets = resultSets.iterator();
+        // 设置当前 ResultSet，这样 #getValue() 能拿到记录
         setCurrentResultSet(this.resultSets.next());
     }
-    
+
     @Override
     public boolean next() throws SQLException {
+        // 当前 ResultSet 迭代下一条记录
         if (getCurrentResultSet().next()) {
             return true;
         }
         if (!resultSets.hasNext()) {
             return false;
         }
+        // 获得下一个ResultSet， 设置当前 ResultSet
         setCurrentResultSet(resultSets.next());
         boolean hasNext = getCurrentResultSet().next();
         if (hasNext) {

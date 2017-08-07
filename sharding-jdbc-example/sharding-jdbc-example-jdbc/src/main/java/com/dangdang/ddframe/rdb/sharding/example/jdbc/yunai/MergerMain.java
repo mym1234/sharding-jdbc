@@ -147,9 +147,16 @@ public class MergerMain {
 //            }
 //            System.out.println(ps.getGeneratedKeys());
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                System.out.println(rs.getLong(1));
+            if (false) {
+                while (rs.next()) {
+                    System.out.println(rs.getLong(1) + "\t" + rs.getString("nickname"));
+                }
+            } else {
+                while (rs.next()) {
+                    System.out.println(rs.getLong(1) + "\t" + rs.getLong(2));
+                }
             }
+//
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -165,10 +172,11 @@ public class MergerMain {
 //        execute("SELECT * FROM t_order ORDER BY id");
 
         // GroupByStreamResultSetMerger
-//        execute("SELECT * FROM t_order GROUP BY id");
+//        execute("SELECT uid, COUNT(id) FROM t_order GROUP BY uid");
+        execute("SELECT uid, AVG(id) FROM t_order GROUP BY uid");
 
         // GroupByMemoryResultSetMerger
-        execute("SELECT uid FROM t_order GROUP BY id ORDER BY id DESC");
+//        execute("SELECT uid FROM t_order GROUP BY id ORDER BY id DESC");
 
         // TODO 聚合字段情况
     }
