@@ -1,9 +1,14 @@
 ## 1.5.1
 
+### 新功能
+
+1. [ISSUE #314](https://github.com/dangdangdotcom/sharding-jdbc/issues/314) 支持DDL类型的SQL
+
 ### 缺陷修正
 
 1. [ISSUE #308](https://github.com/dangdangdotcom/sharding-jdbc/issues/308) 数据库原生的自增GeneratedKey的返回无效
 1. [ISSUE #309](https://github.com/dangdangdotcom/sharding-jdbc/issues/310) 子查询中的orderby和groupby不列入解析上下文
+1. [ISSUE #313](https://github.com/dangdangdotcom/sharding-jdbc/issues/313) 支持<>操作符
 
 ## 1.5.0
 

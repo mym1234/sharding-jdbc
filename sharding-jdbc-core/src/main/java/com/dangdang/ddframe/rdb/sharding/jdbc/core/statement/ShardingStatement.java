@@ -17,6 +17,7 @@
 
 package com.dangdang.ddframe.rdb.sharding.jdbc.core.statement;
 
+import com.dangdang.ddframe.rdb.sharding.constant.SQLType;
 import com.dangdang.ddframe.rdb.sharding.executor.type.statement.StatementExecutor;
 import com.dangdang.ddframe.rdb.sharding.executor.type.statement.StatementUnit;
 import com.dangdang.ddframe.rdb.sharding.jdbc.adapter.AbstractStatementAdapter;
@@ -25,8 +26,8 @@ import com.dangdang.ddframe.rdb.sharding.jdbc.core.resultset.GeneratedKeysResult
 import com.dangdang.ddframe.rdb.sharding.jdbc.core.resultset.ShardingResultSet;
 import com.dangdang.ddframe.rdb.sharding.merger.MergeEngine;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.GeneratedKey;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.insert.InsertStatement;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.select.SelectStatement;
+import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.dml.insert.InsertStatement;
+import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.dql.select.SelectStatement;
 import com.dangdang.ddframe.rdb.sharding.routing.SQLExecutionUnit;
 import com.dangdang.ddframe.rdb.sharding.routing.SQLRouteResult;
 import com.dangdang.ddframe.rdb.sharding.routing.StatementRoutingEngine;
@@ -41,6 +42,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -204,11 +206,19 @@ public class ShardingStatement extends AbstractStatementAdapter {
         routeResult = new StatementRoutingEngine(shardingConnection.getShardingContext()).route(sql);
         Collection<StatementUnit> statementUnits = new LinkedList<>();
         for (SQLExecutionUnit each : routeResult.getExecutionUnits()) {
-            Statement statement = shardingConnection.getConnection(
-                    each.getDataSource(), routeResult.getSqlStatement().getType()).createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
-            replayMethodsInvocation(statement);
-            statementUnits.add(new StatementUnit(each, statement));
-            routedStatements.add(statement);
+            Collection<Connection> connections;
+            SQLType sqlType = routeResult.getSqlStatement().getType();
+            if (SQLType.DDL == sqlType) {
+                connections = shardingConnection.getConnectionForDDL(each.getDataSource());
+            } else {
+                connections = Collections.singletonList(shardingConnection.getConnection(each.getDataSource(), routeResult.getSqlStatement().getType()));
+            }
+            for (Connection connection : connections) {
+                Statement statement = connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
+                replayMethodsInvocation(statement);
+                statementUnits.add(new StatementUnit(each, statement));
+                routedStatements.add(statement);
+            }
         }
         return new StatementExecutor(shardingConnection.getShardingContext().getExecutorEngine(), routeResult.getSqlStatement().getType(), statementUnits);
     }

@@ -31,7 +31,7 @@ import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.table.Tables;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.exception.SQLParsingUnsupportedException;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.expression.*;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.SQLStatement;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.select.SelectStatement;
+import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.dql.select.SelectStatement;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.token.OffsetToken;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.token.RowCountToken;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.token.TableToken;
@@ -346,7 +346,7 @@ public class SQLParser extends AbstractParser {
             } else {
                 parseOtherCondition(sqlStatement);
             }
-        } else if (equalAny(DefaultKeyword.LIKE)) {
+        } else if (equalAny(Symbol.LT_GT, DefaultKeyword.LIKE)) {
             parseOtherCondition(sqlStatement);
         }
         skipIfEqual(Symbol.RIGHT_PAREN);

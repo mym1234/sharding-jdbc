@@ -24,5 +24,5 @@ package com.dangdang.ddframe.rdb.sharding.constant;
  */
 public enum SQLType {
     
-    SELECT, INSERT, DELETE, UPDATE
+    DQL, DML, DDL
 }

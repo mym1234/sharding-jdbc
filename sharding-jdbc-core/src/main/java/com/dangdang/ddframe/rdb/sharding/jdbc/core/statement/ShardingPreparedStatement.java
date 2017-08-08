@@ -17,6 +17,7 @@
 
 package com.dangdang.ddframe.rdb.sharding.jdbc.core.statement;
 
+import com.dangdang.ddframe.rdb.sharding.constant.SQLType;
 import com.dangdang.ddframe.rdb.sharding.executor.type.batch.BatchPreparedStatementExecutor;
 import com.dangdang.ddframe.rdb.sharding.executor.type.batch.BatchPreparedStatementUnit;
 import com.dangdang.ddframe.rdb.sharding.executor.type.prepared.PreparedStatementExecutor;
@@ -26,7 +27,7 @@ import com.dangdang.ddframe.rdb.sharding.jdbc.core.connection.ShardingConnection
 import com.dangdang.ddframe.rdb.sharding.jdbc.core.resultset.ShardingResultSet;
 import com.dangdang.ddframe.rdb.sharding.merger.MergeEngine;
 import com.dangdang.ddframe.rdb.sharding.parsing.parser.context.GeneratedKey;
-import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.select.SelectStatement;
+import com.dangdang.ddframe.rdb.sharding.parsing.parser.statement.dql.select.SelectStatement;
 import com.dangdang.ddframe.rdb.sharding.routing.PreparedStatementRoutingEngine;
 import com.dangdang.ddframe.rdb.sharding.routing.SQLExecutionUnit;
 import com.google.common.base.Optional;
@@ -39,6 +40,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -119,10 +121,27 @@ public final class ShardingPreparedStatement extends AbstractPreparedStatementAd
         Collection<PreparedStatementUnit> result = new LinkedList<>();
         setRouteResult(routingEngine.route(getParameters()));
         for (SQLExecutionUnit each : getRouteResult().getExecutionUnits()) {
-            PreparedStatement preparedStatement = generatePreparedStatement(each);
-            getRoutedStatements().add(preparedStatement);
-            replaySetParameter(preparedStatement);
-            result.add(new PreparedStatementUnit(each, preparedStatement));
+            SQLType sqlType = getRouteResult().getSqlStatement().getType();
+            Collection<PreparedStatement> preparedStatements;
+            if (SQLType.DDL == sqlType) {
+                preparedStatements = generatePreparedStatementForDDL(each);
+            } else {
+                preparedStatements = Collections.singletonList(generatePreparedStatement(each));
+            }
+            getRoutedStatements().addAll(preparedStatements);
+            for (PreparedStatement preparedStatement : preparedStatements) {
+                replaySetParameter(preparedStatement);
+                result.add(new PreparedStatementUnit(each, preparedStatement));
+            }
+        }
+        return result;
+    }
+    
+    private Collection<PreparedStatement> generatePreparedStatementForDDL(final SQLExecutionUnit sqlExecutionUnit) throws SQLException {
+        Collection<PreparedStatement> result = new LinkedList<>();
+        Collection<Connection> connections = getShardingConnection().getConnectionForDDL(sqlExecutionUnit.getDataSource());
+        for (Connection each : connections) {
+            result.add(each.prepareStatement(sqlExecutionUnit.getSql(), getResultSetType(), getResultSetConcurrency(), getResultSetHoldability()));
         }
         return result;
     }

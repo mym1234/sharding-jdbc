@@ -18,32 +18,19 @@
 package com.dangdang.ddframe.rdb.sharding.routing;
 
 import com.google.common.collect.Lists;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 public final class DMLTest extends AbstractDynamicRouteSqlTest {
     
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-    
     @Test
     public void assertInsert() {
         assertSingleTargetWithoutParameter("insert into `order` (order_id, name) value (1,'test')", "ds_1", "insert into order_1 (order_id, name) value (1,'test')");
-        assertSingleTargetWithoutParameter(Lists.newArrayList(new ShardingValuePair("order", 1)), "insert into `order` value (1,'test')", "ds_1", "insert into order_1 value (1,'test')");
         assertSingleTargetWithParameters("insert into `order` (order_id, name) value (?,?)", Arrays.<Object>asList(2, "test"), "ds_0", "insert into order_0 (order_id, name) value (?,?)");
         assertSingleTargetWithParameters(
                 Lists.newArrayList(new ShardingValuePair("order", 2)), "insert into `order` value (?,?)", Arrays.<Object>asList(2, "test"), "ds_0", "insert into order_0 value (?,?)");
-    }
-    
-    @Test
-    public void assertInsertError() {
-        expectedException.expect(IllegalStateException.class);
-        expectedException.expectMessage("INSERT statement should contain sharding value.");
-        assertSingleTargetWithoutParameter("insert into `order` value (1,'test')", null, null);
     }
     
     @Test

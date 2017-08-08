@@ -20,7 +20,6 @@ package com.dangdang.ddframe.rdb.sharding.routing.type.hint;
 import com.dangdang.ddframe.rdb.sharding.api.ShardingValue;
 import com.dangdang.ddframe.rdb.sharding.api.rule.DataSourceRule;
 import com.dangdang.ddframe.rdb.sharding.api.strategy.database.DatabaseShardingStrategy;
-import com.dangdang.ddframe.rdb.sharding.constant.SQLType;
 import com.dangdang.ddframe.rdb.sharding.hint.HintManagerHolder;
 import com.dangdang.ddframe.rdb.sharding.hint.ShardingKey;
 import com.dangdang.ddframe.rdb.sharding.routing.type.RoutingEngine;
@@ -52,11 +51,7 @@ public final class DatabaseHintRoutingEngine implements RoutingEngine {
      * 分库策略
      */
     private final DatabaseShardingStrategy databaseShardingStrategy;
-    /**
-     * SQL 类型
-     */
-    private final SQLType sqlType;
-    
+
     @Override
     public RoutingResult route() {
         // 从 Hint 获得 分片键值
@@ -64,7 +59,7 @@ public final class DatabaseHintRoutingEngine implements RoutingEngine {
         Preconditions.checkState(shardingValue.isPresent());
         log.debug("Before database sharding only db:{} sharding values: {}", dataSourceRule.getDataSourceNames(), shardingValue.get());
         // 路由。表分片规则使用的是 ShardingRule 里的。因为没 SQL 解析。
-        Collection<String> routingDataSources = databaseShardingStrategy.doStaticSharding(sqlType, dataSourceRule.getDataSourceNames(), Collections.<ShardingValue<?>>singleton(shardingValue.get()));
+        Collection<String> routingDataSources = databaseShardingStrategy.doStaticSharding(dataSourceRule.getDataSourceNames(), Collections.<ShardingValue<?>>singleton(shardingValue.get()));
         Preconditions.checkState(!routingDataSources.isEmpty(), "no database route info");
         log.debug("After database sharding only result: {}", routingDataSources);
         // 路由结果

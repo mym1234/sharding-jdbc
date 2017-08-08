@@ -62,7 +62,7 @@ public final class DatabaseHintSQLRouter implements SQLRouter {
         Context context = MetricsContext.start("Route SQL");
         SQLRouteResult result = new SQLRouteResult(sqlStatement);
         // 路由
-        RoutingResult routingResult = new DatabaseHintRoutingEngine(shardingRule.getDataSourceRule(), shardingRule.getDatabaseShardingStrategy(), sqlStatement.getType())
+        RoutingResult routingResult = new DatabaseHintRoutingEngine(shardingRule.getDataSourceRule(), shardingRule.getDatabaseShardingStrategy())
                 .route();
         // SQL最小执行单元
         for (TableUnit each : routingResult.getTableUnits().getTableUnits()) {
