@@ -102,9 +102,11 @@ public class IdMain {
                 .build();
         ShardingDataSource dataSource = new ShardingDataSource(shardingRule);
         // 执行
-        String sql = "INSERT INTO t_order(uid, nickname, pid) VALUES (1, '2', 3)";
+        String sql = "INSERT INTO t_order(uid, nickname, pid) VALUES (1, '2', ?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setLong(1, 100);
             ps.execute();
             ResultSet rs = ps.getGeneratedKeys();
             if (rs.next()) {

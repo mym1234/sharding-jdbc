@@ -38,7 +38,10 @@ import java.util.List;
  */
 @Slf4j
 public abstract class AbstractResultSetAdapter extends AbstractUnsupportedOperationResultSet {
-    
+
+    /**
+     * 结果集集合
+     */
     @Getter
     private final List<ResultSet> resultSets;
 

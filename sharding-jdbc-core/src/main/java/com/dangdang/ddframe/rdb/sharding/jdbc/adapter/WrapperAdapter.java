@@ -31,7 +31,10 @@ import java.util.Collection;
  * @author zhangliang
  */
 public class WrapperAdapter implements Wrapper {
-    
+
+    /**
+     * 记录的方法数组
+     */
     private final Collection<JdbcMethodInvocation> jdbcMethodInvocations = new ArrayList<>();
     
     @SuppressWarnings("unchecked")
@@ -76,12 +79,12 @@ public class WrapperAdapter implements Wrapper {
     }
     
     protected void throwSQLExceptionIfNecessary(final Collection<SQLException> exceptions) throws SQLException {
-        if (exceptions.isEmpty()) {
+        if (exceptions.isEmpty()) { // 为空不抛出异常
             return;
         }
         SQLException ex = new SQLException();
         for (SQLException each : exceptions) {
-            ex.setNextException(each);
+            ex.setNextException(each); // 异常链
         }
         throw ex;
     }

@@ -27,10 +27,15 @@ import java.lang.reflect.Method;
  * @author zhangliang
  */
 public final class SetParameterMethodInvocation extends JdbcMethodInvocation {
-    
+
+    /**
+     * 位置
+     */
     @Getter
     private final int index;
-    
+    /**
+     * 参数值
+     */
     @Getter
     private final Object value;
     

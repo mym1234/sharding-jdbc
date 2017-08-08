@@ -31,10 +31,15 @@ import java.lang.reflect.Method;
  */
 @RequiredArgsConstructor
 public class JdbcMethodInvocation {
-    
+
+    /**
+     * 方法
+     */
     @Getter
     private final Method method;
-    
+    /**
+     * 方法参数
+     */
     @Getter
     private final Object[] arguments;
     
@@ -45,7 +50,7 @@ public class JdbcMethodInvocation {
      */
     public void invoke(final Object target) {
         try {
-            method.invoke(target, arguments);
+            method.invoke(target, arguments); // 反射调用
         } catch (final IllegalAccessException | InvocationTargetException ex) {
             throw new ShardingJdbcException("Invoke jdbc method exception", ex);
         }
