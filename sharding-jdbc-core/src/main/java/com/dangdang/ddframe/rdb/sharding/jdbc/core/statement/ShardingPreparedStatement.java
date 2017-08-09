@@ -83,14 +83,18 @@ public final class ShardingPreparedStatement extends AbstractPreparedStatementAd
     public ResultSet executeQuery() throws SQLException {
         ResultSet result;
         try {
+            // 路由
             Collection<PreparedStatementUnit> preparedStatementUnits = route();
+            // 执行
             List<ResultSet> resultSets = new PreparedStatementExecutor(
                     getShardingConnection().getShardingContext().getExecutorEngine(), getRouteResult().getSqlStatement().getType(), preparedStatementUnits, getParameters()).executeQuery();
+            // 结果归并
             result = new ShardingResultSet(resultSets, new MergeEngine(
                     getShardingConnection().getShardingContext().getDatabaseType(), resultSets, (SelectStatement) getRouteResult().getSqlStatement()).merge());
         } finally {
             clearBatch();
         }
+        // 设置结果集
         setCurrentResultSet(result);
         return result;
     }
@@ -109,26 +113,38 @@ public final class ShardingPreparedStatement extends AbstractPreparedStatementAd
     @Override
     public boolean execute() throws SQLException {
         try {
+            // 路由
             Collection<PreparedStatementUnit> preparedStatementUnits = route();
+            // 执行
             return new PreparedStatementExecutor(
                     getShardingConnection().getShardingContext().getExecutorEngine(), getRouteResult().getSqlStatement().getType(), preparedStatementUnits, getParameters()).execute();
         } finally {
             clearBatch();
         }
     }
-    
+
+    /**
+     * 分库分表路由，获得预编译语句对象执行单元集合
+     *
+     * @return 预编译语句对象执行单元集合
+     * @throws SQLException 当 JDBC 操作发生异常时
+     */
     private Collection<PreparedStatementUnit> route() throws SQLException {
         Collection<PreparedStatementUnit> result = new LinkedList<>();
+        // 路由
         setRouteResult(routingEngine.route(getParameters()));
+        // 遍历 SQL 执行单元
         for (SQLExecutionUnit each : getRouteResult().getExecutionUnits()) {
             SQLType sqlType = getRouteResult().getSqlStatement().getType();
             Collection<PreparedStatement> preparedStatements;
+            // 创建实际的 PreparedStatement
             if (SQLType.DDL == sqlType) {
                 preparedStatements = generatePreparedStatementForDDL(each);
             } else {
                 preparedStatements = Collections.singletonList(generatePreparedStatement(each));
             }
             getRoutedStatements().addAll(preparedStatements);
+            // 回放设置占位符参数到 PreparedStatement
             for (PreparedStatement preparedStatement : preparedStatements) {
                 replaySetParameter(preparedStatement);
                 result.add(new PreparedStatementUnit(each, preparedStatement));
@@ -145,10 +161,19 @@ public final class ShardingPreparedStatement extends AbstractPreparedStatementAd
         }
         return result;
     }
-    
+
+    /**
+     * 创建 PreparedStatement
+     *
+     * @param sqlExecutionUnit SQL 执行单元
+     * @return PreparedStatement
+     * @throws SQLException 当 JDBC 操作发生异常时
+     */
     private PreparedStatement generatePreparedStatement(final SQLExecutionUnit sqlExecutionUnit) throws SQLException {
         Optional<GeneratedKey> generatedKey = getGeneratedKey();
+        // 获得连接
         Connection connection = getShardingConnection().getConnection(sqlExecutionUnit.getDataSource(), getRouteResult().getSqlStatement().getType());
+        // 声明返回主键
         if (isReturnGeneratedKeys() || isReturnGeneratedKeys() && generatedKey.isPresent()) {
             return connection.prepareStatement(sqlExecutionUnit.getSql(), RETURN_GENERATED_KEYS);
         }
@@ -157,9 +182,13 @@ public final class ShardingPreparedStatement extends AbstractPreparedStatementAd
     
     @Override
     public void clearBatch() throws SQLException {
+        // 清理 ResultSet
         setCurrentResultSet(null);
+        // 清理回放方法
         clearParameters();
+        // 清理批量语句
         batchStatementUnits.clear();
+        // 清理占位符参数
         parameterSets.clear();
     }
     

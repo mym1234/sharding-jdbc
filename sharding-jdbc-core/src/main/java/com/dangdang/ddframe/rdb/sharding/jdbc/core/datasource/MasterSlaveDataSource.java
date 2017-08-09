@@ -39,7 +39,10 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 public final class MasterSlaveDataSource extends AbstractDataSourceAdapter {
-    
+
+    /**
+     * 当前线程是否是 DML 操作标识
+     */
     private static final ThreadLocal<Boolean> DML_FLAG = new ThreadLocal<Boolean>() {
         
         @Override
@@ -47,15 +50,24 @@ public final class MasterSlaveDataSource extends AbstractDataSourceAdapter {
             return false;
         }
     };
-    
+
+    /**
+     * 数据源名
+     */
     private final String name;
-    
+    /**
+     * 主数据源
+     */
     @Getter
     private final DataSource masterDataSource;
-    
+    /**
+     * 从数据源集合
+     */
     @Getter
     private final List<DataSource> slaveDataSources;
-    
+    /**
+     * 从库负载均衡策略
+     */
     private final SlaveLoadBalanceStrategy slaveLoadBalanceStrategy = new RoundRobinSlaveLoadBalanceStrategy();
     
     /**

@@ -94,11 +94,13 @@ public final class ShardingConnection extends AbstractConnectionAdapter {
      * @throws SQLException SQL异常
      */
     public Connection getConnection(final String dataSourceName, final SQLType sqlType) throws SQLException {
+        // 从连接缓存中获取连接
         Optional<Connection> connection = getCachedConnection(dataSourceName, sqlType);
         if (connection.isPresent()) {
             return connection.get();
         }
         Context metricsContext = MetricsContext.start(Joiner.on("-").join("ShardingConnection-getConnection", dataSourceName));
+        //
         DataSource dataSource = shardingContext.getShardingRule().getDataSourceRule().getDataSource(dataSourceName);
         Preconditions.checkState(null != dataSource, "Missing the rule of %s in DataSourceRule", dataSourceName);
         String realDataSourceName;
@@ -110,7 +112,9 @@ public final class ShardingConnection extends AbstractConnectionAdapter {
         }
         Connection result = dataSource.getConnection();
         MetricsContext.stop(metricsContext);
+        // 添加到连接缓存
         connectionMap.put(realDataSourceName, result);
+        // 回放 Connection 方法
         replayMethodsInvocation(result);
         return result;
     }
