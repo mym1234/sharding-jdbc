@@ -41,7 +41,10 @@ import java.util.List;
  */
 @RequiredArgsConstructor
 public final class RdbTransactionLogStorage implements TransactionLogStorage {
-    
+
+    /**
+     * 存储事务日志的数据源
+     */
     private final DataSource dataSource;
     
     @Override
@@ -59,7 +62,7 @@ public final class RdbTransactionLogStorage implements TransactionLogStorage {
             preparedStatement.executeUpdate();
         } catch (final SQLException ex) {
             throw new TransactionLogStorageException(ex);
-        }
+        } // TODO 疑问：为啥没close()
     }
     
     @Override
@@ -72,7 +75,7 @@ public final class RdbTransactionLogStorage implements TransactionLogStorage {
             preparedStatement.executeUpdate();
         } catch (final SQLException ex) {
             throw new TransactionLogStorageException(ex);
-        }
+        } // TODO 疑问：为啥没close()
     }
     
     @Override
@@ -82,9 +85,9 @@ public final class RdbTransactionLogStorage implements TransactionLogStorage {
             + "FROM `transaction_log` WHERE `async_delivery_try_times`<? AND `transaction_type`=? AND `creation_time`<? LIMIT ?;";
         try (Connection conn = dataSource.getConnection()) {
             try (PreparedStatement preparedStatement = conn.prepareStatement(sql)) {
-                preparedStatement.setInt(1, maxDeliveryTryTimes);
-                preparedStatement.setString(2, SoftTransactionType.BestEffortsDelivery.name());
-                preparedStatement.setLong(3, System.currentTimeMillis() - maxDeliveryTryDelayMillis);
+                preparedStatement.setInt(1, maxDeliveryTryTimes); // 最大重试次数
+                preparedStatement.setString(2, SoftTransactionType.BestEffortsDelivery.name()); // 柔性事务类型
+                preparedStatement.setLong(3, System.currentTimeMillis() - maxDeliveryTryDelayMillis); // 早于异步处理的间隔时间
                 preparedStatement.setInt(4, size);
                 try (ResultSet rs = preparedStatement.executeQuery()) {
                     while (rs.next()) {
@@ -116,6 +119,7 @@ public final class RdbTransactionLogStorage implements TransactionLogStorage {
     
     @Override
     public boolean processData(final Connection connection, final TransactionLog transactionLog, final int maxDeliveryTryTimes) {
+        // 重试执行失败 SQL
         try (
             Connection conn = connection;
             PreparedStatement preparedStatement = conn.prepareStatement(transactionLog.getSql())) {
@@ -124,9 +128,11 @@ public final class RdbTransactionLogStorage implements TransactionLogStorage {
             }
             preparedStatement.executeUpdate();
         } catch (final SQLException ex) {
+            // 重试失败，更新事务日志，增加已异步重试次数
             increaseAsyncDeliveryTryTimes(transactionLog.getId());
             throw new TransactionCompensationException(ex);
         }
+        // 移除重试执行成功 SQL 对应的事务日志
         remove(transactionLog.getId());
         return true;
     }

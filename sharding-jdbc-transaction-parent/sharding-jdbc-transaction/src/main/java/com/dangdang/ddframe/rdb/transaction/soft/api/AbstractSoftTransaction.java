@@ -33,26 +33,45 @@ import java.util.UUID;
  * @author zhangliang 
  */
 public abstract class AbstractSoftTransaction {
-    
+
+    /**
+     * 分片连接原自动提交状态
+     */
     private boolean previousAutoCommit;
-    
+    /**
+     * 分片连接
+     */
     @Getter
     private ShardingConnection connection;
-    
+    /**
+     * 事务类型
+     */
     @Getter
     private SoftTransactionType transactionType;
-    
+    /**
+     * 事务编号
+     */
     @Getter
     private String transactionId;
-    
+
+    /**
+     * 开启柔性
+     *
+     * @param conn 分片连接
+     * @param type 事务类型
+     * @throws SQLException
+     */
     protected final void beginInternal(final Connection conn, final SoftTransactionType type) throws SQLException {
         // TODO 判断如果在传统事务中，则抛异常
         Preconditions.checkArgument(conn instanceof ShardingConnection, "Only ShardingConnection can support eventual consistency transaction.");
+        // 设置执行错误，不抛出异常
         ExecutorExceptionHandler.setExceptionThrown(false);
         connection = (ShardingConnection) conn;
         transactionType = type;
+        // 设置自动提交状态
         previousAutoCommit = connection.getAutoCommit();
         connection.setAutoCommit(true);
+        // 生成事务编号
         // TODO 替换UUID为更有效率的id生成器
         transactionId = UUID.randomUUID().toString();
     }

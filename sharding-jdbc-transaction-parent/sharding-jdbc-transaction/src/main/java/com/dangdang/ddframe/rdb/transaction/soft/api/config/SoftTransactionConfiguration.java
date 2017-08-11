@@ -60,7 +60,6 @@ public class SoftTransactionConfiguration {
      * 事务日志存储类型.
      */
     private TransactionLogDataSourceType storageType = RDB;
-    
     /**
      * 存储事务日志的数据源.
      */

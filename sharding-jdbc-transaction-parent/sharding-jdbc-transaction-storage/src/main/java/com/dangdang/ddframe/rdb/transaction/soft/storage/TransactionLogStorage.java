@@ -35,7 +35,7 @@ public interface TransactionLogStorage {
     void add(TransactionLog transactionLog);
     
     /**
-     *  根据主键删除事务日志.
+     * 根据主键删除事务日志.
      * 
      * @param id 事务日志主键
      */

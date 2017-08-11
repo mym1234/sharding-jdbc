@@ -54,17 +54,17 @@ public final class BestEffortsDeliveryListener {
         TransactionLogStorage transactionLogStorage = TransactionLogStorageFactory.createTransactionLogStorage(transactionConfig.buildTransactionLogDataSource());
         BEDSoftTransaction bedSoftTransaction = (BEDSoftTransaction) SoftTransactionManager.getCurrentTransaction().get();
         switch (event.getEventExecutionType()) {
-            case BEFORE_EXECUTE:
+            case BEFORE_EXECUTE: // 执行前，插入事务日志
                 //TODO 对于批量执行的SQL需要解析成两层列表
                 transactionLogStorage.add(new TransactionLog(event.getId(), bedSoftTransaction.getTransactionId(), bedSoftTransaction.getTransactionType(), 
                         event.getDataSource(), event.getSql(), event.getParameters(), System.currentTimeMillis(), 0));
                 return;
-            case EXECUTE_SUCCESS: 
+            case EXECUTE_SUCCESS: // 执行成功，移除事务日志
                 transactionLogStorage.remove(event.getId());
                 return;
-            case EXECUTE_FAILURE: 
+            case EXECUTE_FAILURE: // 执行失败，同步重试
                 boolean deliverySuccess = false;
-                for (int i = 0; i < transactionConfig.getSyncMaxDeliveryTryTimes(); i++) {
+                for (int i = 0; i < transactionConfig.getSyncMaxDeliveryTryTimes(); i++) { // 同步【多次】重试
                     if (deliverySuccess) {
                         return;
                     }
@@ -72,19 +72,22 @@ public final class BestEffortsDeliveryListener {
                     Connection conn = null;
                     PreparedStatement preparedStatement = null;
                     try {
+                        // 获得数据库连接
                         conn = bedSoftTransaction.getConnection().getConnection(event.getDataSource(), SQLType.DML);
-                        if (!isValidConnection(conn)) {
+                        if (!isValidConnection(conn)) { // 因为可能执行失败是数据库连接异常，所以判断一次，如果无效，重新获取数据库连接
                             bedSoftTransaction.getConnection().release(conn);
                             conn = bedSoftTransaction.getConnection().getConnection(event.getDataSource(), SQLType.DML);
                             isNewConnection = true;
                         }
                         preparedStatement = conn.prepareStatement(event.getSql());
+                        // 同步重试
                         //TODO 对于批量事件需要解析成两层列表
                         for (int parameterIndex = 0; parameterIndex < event.getParameters().size(); parameterIndex++) {
                             preparedStatement.setObject(parameterIndex + 1, event.getParameters().get(parameterIndex));
                         }
                         preparedStatement.executeUpdate();
                         deliverySuccess = true;
+                        // 同步重试成功，移除事务日志
                         transactionLogStorage.remove(event.getId());
                     } catch (final SQLException ex) {
                         log.error(String.format("Delivery times %s error, max try times is %s", i + 1, transactionConfig.getSyncMaxDeliveryTryTimes()), ex);
@@ -97,12 +100,23 @@ public final class BestEffortsDeliveryListener {
                 throw new UnsupportedOperationException(event.getEventExecutionType().toString());
         }
     }
-    
+
+    /**
+     * 判断是否处理。处理条件：处于 最大努力送达型事务
+     *
+     * @return 是否
+     */
     private boolean isProcessContinuously() {
         return SoftTransactionManager.getCurrentTransaction().isPresent()
                 && BestEffortsDelivery == SoftTransactionManager.getCurrentTransaction().get().getTransactionType();
     }
-    
+
+    /**
+     * 通过 SELECT 1 校验数据库连接是否有效
+     *
+     * @param conn 数据库连接
+     * @return 是否有效
+     */
     private boolean isValidConnection(final Connection conn) {
         try (PreparedStatement preparedStatement = conn.prepareStatement("SELECT 1")) {
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -112,7 +126,14 @@ public final class BestEffortsDeliveryListener {
             return false;
         }
     }
-    
+
+    /**
+     * 关闭释放预编译SQL对象和数据库连接
+     *
+     * @param isNewConnection 是否新创建的数据库连接，是的情况下才释放
+     * @param conn 数据库连接
+     * @param preparedStatement 预编译SQL
+     */
     private void close(final boolean isNewConnection, final Connection conn, final PreparedStatement preparedStatement) {
         if (null != preparedStatement) {
             try {

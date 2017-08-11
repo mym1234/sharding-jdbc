@@ -32,21 +32,39 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 public final class TransactionLog {
-    
-    private final String id;
-    
-    private final String transactionId;
-    
-    private final SoftTransactionType transactionType;
-    
-    private final String dataSource;
-    
-    private final String sql;
-    
-    private final List<Object> parameters;
 
+    /**
+     * 事务日志编号
+     */
+    private final String id;
+    /**
+     * 事务编号
+     * tips：非存储字段
+     */
+    private final String transactionId;
+    /**
+     * 柔性事务类型
+     */
+    private final SoftTransactionType transactionType;
+    /**
+     * 数据源名
+     */
+    private final String dataSource;
+    /**
+     * SQL
+     */
+    private final String sql;
+    /**
+     * 占位符参数
+     */
+    private final List<Object> parameters;
+    /**
+     * 记录时间
+     */
     private final long creationTime;
-    
+    /**
+     * 已异步重试次数
+     */
     @Setter
     private int asyncDeliveryTryTimes;
 }

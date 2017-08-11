@@ -37,19 +37,24 @@ import java.util.List;
  */
 @Slf4j
 public class BestEffortsDeliveryJob extends AbstractIndividualThroughputDataFlowElasticJob<TransactionLog> {
-    
+
+    /**
+     * 最大努力送达型异步作业配置对象
+     */
     @Setter
     private BestEffortsDeliveryConfiguration bedConfig;
-    
+    /**
+     * 事务日志存储器对象
+     */
     @Setter
     private TransactionLogStorage transactionLogStorage;
-    
+
     @Override
     public List<TransactionLog> fetchData(final JobExecutionMultipleShardingContext context) {
-        return transactionLogStorage.findEligibleTransactionLogs(context.getFetchDataCount(), 
+        return transactionLogStorage.findEligibleTransactionLogs(context.getFetchDataCount(),
             bedConfig.getJobConfig().getMaxDeliveryTryTimes(), bedConfig.getJobConfig().getMaxDeliveryTryDelayMillis());
     }
-    
+
     @Override
     public boolean processData(final JobExecutionMultipleShardingContext context, final TransactionLog data) {
         try (
