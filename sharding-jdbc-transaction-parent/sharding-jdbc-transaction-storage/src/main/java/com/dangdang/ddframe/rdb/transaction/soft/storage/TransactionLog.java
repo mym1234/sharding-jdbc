@@ -47,11 +47,11 @@ public final class TransactionLog {
      */
     private final SoftTransactionType transactionType;
     /**
-     * 数据源名
+     * 真实数据源名
      */
     private final String dataSource;
     /**
-     * SQL
+     * 执行 SQL（已改写）
      */
     private final String sql;
     /**
