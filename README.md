@@ -1,5 +1,46 @@
 # Sharding-JDBC - JDBC driver for shard databases and tables 
 
+# 个人博客
+
+-------
+
+![](http://www.yunai.me/images/common/wechat_mp.jpeg)
+
+> 🙂🙂🙂关注**微信公众号：【芋艿的后端小屋】**有福利：  
+> 1. RocketMQ / MyCAT / Sharding-JDBC **所有**源码分析文章列表  
+> 2. RocketMQ / MyCAT / Sharding-JDBC **中文注释源码 GitHub 地址**  
+> 3. 您对于源码的疑问每条留言**都**将得到**认真**回复。**甚至不知道如何读源码也可以请教噢**。  
+> 4. **新的**源码解析文章**实时**收到通知。**每周更新一篇左右**。
+
+-------
+
+# 联系方式
+
+* QQ : 7685413
+* 微信 : wangwenbin-server
+* 掘金-Java交流群 : 217878901
+* 知识星球：![知识星球](http://www.iocoder.cn/images/Architecture/2017_12_29/01.png)
+
+* 数据库中间件 **Sharding-JDBC**
+    * [《Sharding-JDBC 源码分析 —— 为什么阅读 Sharding-JDBC 源码？》](http://www.iocoder.cn/Sharding-JDBC/why-read-Sharding-JDBC-source-code?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（一）之词法解析》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-1?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（二）之SQL解析》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-2?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（三）之查询SQL》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-3?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（四）之插入SQL》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-4?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（五）之更新SQL》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-5?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（六）之删除SQL》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-6?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 解析（七）之DDL》](http://www.iocoder.cn/Sharding-JDBC/sql-parse-7?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 路由（一）之分库分表配置》](http://www.iocoder.cn/Sharding-JDBC/sql-route-1?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 路由（二）之分库分表路由》](http://www.iocoder.cn/Sharding-JDBC/sql-route-2?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 路由（三）之Spring与YAML配置》](http://www.iocoder.cn/Sharding-JDBC/sql-route-3?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 改写》](http://www.iocoder.cn/Sharding-JDBC/sql-rewrite?github&1602)
+    * [《Sharding-JDBC 源码分析 —— 分布式主键》](http://www.iocoder.cn/Sharding-JDBC/distributed-id?github&1602)
+    * [《Sharding-JDBC 源码分析 —— SQL 执行》](http://www.iocoder.cn/Sharding-JDBC/sql-execute?github&1602)
+    * [《Sharding-JDBC 源码分析 —— 结果归并》](http://www.iocoder.cn/Sharding-JDBC/result-merger?github&1602)
+    * [《Sharding-JDBC 源码分析 —— JDBC实现与读写分离》](http://www.iocoder.cn/Sharding-JDBC/jdbc-implement-and-read-write-splitting?github&1602)
+    * [《Sharding-JDBC 源码分析 —— 分布式事务（一）之最大努力型》](http://www.iocoder.cn/Sharding-JDBC/transaction-bed?github&1602)
+    * [《Sharding-JDBC 源码分析 —— 分布式事务（二）之事务补偿型》](http://www.iocoder.cn/Sharding-JDBC/transaction-tcc?github&1602)
+
 # [中文主页](http://dangdangdotcom.github.io/sharding-jdbc)
 
 [![Build Status](https://secure.travis-ci.org/dangdangdotcom/sharding-jdbc.png?branch=master)](https://travis-ci.org/dangdangdotcom/sharding-jdbc)
