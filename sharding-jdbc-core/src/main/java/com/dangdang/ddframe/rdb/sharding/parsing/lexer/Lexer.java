@@ -61,23 +61,32 @@ public class Lexer {
      */
     public final void nextToken() {
         skipIgnoredToken();
-        if (isVariableBegin()) { // 变量
+        // 变量
+        if (isVariableBegin()) {
             currentToken = new Tokenizer(input, dictionary, offset).scanVariable();
-        } else if (isNCharBegin()) { // N\
+        // N\
+        } else if (isNCharBegin()) {
             currentToken = new Tokenizer(input, dictionary, ++offset).scanChars();
-        } else if (isIdentifierBegin()) { // Keyword + Literals.IDENTIFIER
+        // Keyword + Literals.IDENTIFIER
+        } else if (isIdentifierBegin()) {
             currentToken = new Tokenizer(input, dictionary, offset).scanIdentifier();
-        } else if (isHexDecimalBegin()) { // 十六进制
+        // 十六进制
+        } else if (isHexDecimalBegin()) {
             currentToken = new Tokenizer(input, dictionary, offset).scanHexDecimal();
-        } else if (isNumberBegin()) { // 数字（整数+浮点数）
+        // 数字（整数+浮点数）
+        } else if (isNumberBegin()) {
             currentToken = new Tokenizer(input, dictionary, offset).scanNumber();
-        } else if (isSymbolBegin()) { // 符号
+        // 符号
+        } else if (isSymbolBegin()) {
             currentToken = new Tokenizer(input, dictionary, offset).scanSymbol();
-        } else if (isCharsBegin()) { // 字符串，例如："abc"
+        // 字符串，例如："abc"
+        } else if (isCharsBegin()) {
             currentToken = new Tokenizer(input, dictionary, offset).scanChars();
-        } else if (isEnd()) { // 结束
+        // 结束
+        } else if (isEnd()) {
             currentToken = new Token(Assist.END, "", offset);
-        } else { // 分析错误，无符合条件的词法标记
+        // 分析错误，无符合条件的词法标记
+        } else {
             currentToken = new Token(Assist.ERROR, "", offset);
         }
         offset = currentToken.getEndPosition();
